@@ -158,6 +158,45 @@ def get_predictions():
             "error": str(e)
         }), 500
 
+@app.route('/api/today-results')
+def get_today_results():
+    try:
+        df = load_data()
+        today = datetime.now().strftime("%d/%m/%Y")
+        today_results = df[df['Date'] == today]
+        
+        results = []
+        for _, row in today_results.iterrows():
+            results.append({
+                "market": row["Market"],
+                "date": row["Date"],
+                "open": str(row["Open"]),
+                "close": str(row["Close"]),
+                "jodi": str(row["Jodi"]),
+                "status": "declared"
+            })
+        
+        # If no results for today, check if it's a valid trading day
+        if not results:
+            return jsonify({
+                "success": True,
+                "date": today,
+                "results": [],
+                "message": "No results declared yet for today"
+            })
+        
+        return jsonify({
+            "success": True,
+            "date": today,
+            "results": results
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
 @app.route('/api/generate-predictions', methods=['POST'])
 def generate_predictions():
     try:
