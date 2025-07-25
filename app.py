@@ -173,19 +173,10 @@ def analytics_performance():
         })
     except Exception as e:
         print(f"Performance error: {e}")
-        # Return fallback data on error
-        markets = [
-            {'name': 'Time Bazar', 'accuracy': 68.5},
-            {'name': 'Milan Day', 'accuracy': 72.3},
-            {'name': 'Rajdhani Day', 'accuracy': 65.8},
-            {'name': 'Kalyan', 'accuracy': 70.2},
-            {'name': 'Milan Night', 'accuracy': 69.1},
-            {'name': 'Rajdhani Night', 'accuracy': 67.4},
-            {'name': 'Main Bazar', 'accuracy': 71.6}
-        ]
         return jsonify({
-            'success': True,
-            'markets': markets
+            'success': False,
+            'error': 'Unable to calculate performance metrics',
+            'markets': []
         })
 
 @app.route('/api/analytics/heatmap')
@@ -216,14 +207,10 @@ def analytics_heatmap():
         })
     except Exception as e:
         print(f"Heatmap error: {e}")
-        # Return fallback data on error
-        frequency = {
-            '0': 45, '1': 52, '2': 38, '3': 47, '4': 41,
-            '5': 55, '6': 43, '7': 49, '8': 36, '9': 51
-        }
         return jsonify({
-            'success': True,
-            'frequency': frequency
+            'success': False,
+            'error': 'Unable to calculate heatmap data',
+            'frequency': {}
         })
 
 @app.route('/api/analytics/accuracy-trend')
@@ -257,21 +244,10 @@ def analytics_accuracy_trend():
         })
     except Exception as e:
         print(f"Accuracy trend error: {e}")
-        # Return realistic fallback data
-        trends = []
-        accuracies = [68, 71, 69, 73, 67, 72, 70, 74, 66, 75, 69, 71, 68, 72, 70, 
-                     73, 67, 71, 69, 74, 68, 72, 70, 73, 69, 71, 67, 74, 68, 72]
-        
-        for i, acc in enumerate(accuracies):
-            date = (datetime.now() - timedelta(days=30-i)).strftime('%d/%m/%Y')
-            trends.append({
-                'date': str(date),
-                'accuracy': float(acc)
-            })
-        
         return jsonify({
-            'success': True,
-            'trends': trends
+            'success': False,
+            'error': 'Unable to calculate accuracy trends',
+            'trends': []
         })
 
 @app.route('/api/analytics/risk-metrics')
@@ -308,17 +284,10 @@ def analytics_risk_metrics():
         })
     except Exception as e:
         print(f"Risk metrics error: {e}")
-        # Return realistic fallback data
-        metrics = {
-            'high_risk': 18.5,
-            'medium_risk': 56.2,
-            'low_risk': 25.3,
-            'confidence': 72.8,
-            'total_predictions': 100
-        }
         return jsonify({
-            'success': True,
-            'metrics': metrics
+            'success': False,
+            'error': 'Unable to calculate risk metrics',
+            'metrics': {}
         })
 
 @app.route('/api/calculate-pl', methods=['POST'])
@@ -477,16 +446,21 @@ def load_data():
         df["Date"] = pd.to_datetime(df["Date"], errors="coerce", dayfirst=True)
         df = df.dropna(subset=["Date"])
         
-        # Clean numeric columns with better validation
+        # Clean numeric columns with proper validation
         def clean_numeric_column(series, column_name):
             # Convert to string first and handle NaN values
             cleaned = series.astype(str).fillna('0')
             
             if column_name in ["Open", "Close"]:
-                # For Open/Close, extract only the first digit from each value
-                # Handle very long strings by taking only first character that's a digit
+                # For Open/Close, extract only single digits (0-9)
                 def extract_single_digit(val):
                     val_str = str(val).strip()
+                    
+                    # Handle extremely long strings - likely corrupted data
+                    if len(val_str) > 10:
+                        # Skip corrupted entries
+                        return None
+                    
                     # Find first digit in the string
                     for char in val_str:
                         if char.isdigit():
@@ -494,46 +468,44 @@ def load_data():
                             # Ensure it's between 0-9
                             if 0 <= digit <= 9:
                                 return digit
-                    return 0  # Default fallback
+                    return None  # Mark for removal
                 
                 # Apply the extraction function
                 numeric = cleaned.apply(extract_single_digit)
-                return pd.Series(numeric, dtype=int)
-            else:
-                # For other columns, clean and convert
-                cleaned = cleaned.str.replace(r'[^0-9]', '', regex=True)
-                # If empty after cleaning, set to '0'
-                cleaned = cleaned.replace('', '0')
-                # Take only first 10 characters to avoid overflow
-                cleaned = cleaned.str[:10]
-                numeric = pd.to_numeric(cleaned, errors="coerce").fillna(0)
                 return numeric
+            else:
+                # For Jodi column, ensure 2-digit format
+                def clean_jodi_value(val):
+                    val_str = str(val).strip()
+                    
+                    # Handle extremely long strings - likely corrupted data
+                    if len(val_str) > 10:
+                        return None
+                    
+                    # Remove all non-digits
+                    digits_only = ''.join(c for c in val_str if c.isdigit())
+                    
+                    # If we have digits, take first 2, otherwise skip
+                    if digits_only and len(digits_only) >= 1:
+                        jodi = digits_only[:2].zfill(2)
+                        return jodi
+                    return None
+                
+                return cleaned.apply(clean_jodi_value)
         
         df["Open"] = clean_numeric_column(df["Open"], "Open")
         df["Close"] = clean_numeric_column(df["Close"], "Close")
+        df["Jodi"] = clean_numeric_column(df["Jodi"], "Jodi")
         
-        # Clean Jodi column (should be 2 digits)
-        def clean_jodi(val):
-            val_str = str(val).strip()
-            # Remove all non-digits
-            digits_only = ''.join(c for c in val_str if c.isdigit())
-            # If we have digits, take first 2, otherwise use default
-            if digits_only:
-                # Take first 2 digits, pad with 0 if needed
-                jodi = digits_only[:2].zfill(2)
-                return jodi
-            else:
-                # Generate random 2-digit number as fallback
-                return f"{np.random.randint(10, 100):02d}"
-        
-        df["Jodi"] = df["Jodi"].apply(clean_jodi)
-        # Only keep valid 2-digit jodis
-        df = df[df["Jodi"].str.match(r'^\d{2}$', na=False)]
-        
-        # Remove rows with invalid data
+        # Remove rows with corrupted data (None values)
         df = df.dropna(subset=["Open", "Close", "Jodi"])
+        
+        # Additional validation for Open/Close (must be 0-9)
         df = df[(df["Open"] >= 0) & (df["Open"] <= 9)]
         df = df[(df["Close"] >= 0) & (df["Close"] <= 9)]
+        
+        # Additional validation for Jodi (must be 2-digit string)
+        df = df[df["Jodi"].str.match(r'^\d{2}$', na=False)]
         
         # Convert to proper types
         df["Open"] = df["Open"].astype(int)
@@ -546,24 +518,24 @@ def load_data():
         print(f"Error loading data: {e}")
         return pd.DataFrame()
 
-# === FALLBACK DATA GENERATION ===
-def generate_fallback_data():
-    """Generate sample data when main data file is corrupted or missing"""
-    np.random.seed(42)
-    dates = pd.date_range(start='2024-01-01', end='2024-12-31', freq='D')
+# === DATA VALIDATION ===
+def validate_data_integrity(df):
+    """Validate data integrity and remove corrupted entries"""
+    if df.empty:
+        return df
     
-    fallback_data = []
-    for market in MARKETS:
-        for date in dates[-30:]:  # Last 30 days
-            fallback_data.append({
-                'Market': market,
-                'Date': date,
-                'Open': np.random.randint(0, 10),
-                'Close': np.random.randint(0, 10),
-                'Jodi': f"{np.random.randint(10, 100):02d}"
-            })
+    # Remove entries with invalid dates
+    df = df[df["Date"].notna()]
     
-    return pd.DataFrame(fallback_data)
+    # Remove entries older than 2 years (likely test data)
+    cutoff_date = datetime.now() - timedelta(days=730)
+    df = df[df["Date"] >= cutoff_date]
+    
+    # Ensure all numeric values are within expected ranges
+    df = df[(df["Open"] >= 0) & (df["Open"] <= 9)]
+    df = df[(df["Close"] >= 0) & (df["Close"] <= 9)]
+    
+    return df
 
 # === ADVANCED FEATURE ENGINEERING ===
 def engineer_advanced_features(df):
@@ -654,20 +626,18 @@ def analyze_patterns(df, market):
 
 # === ENHANCED PREDICTION SYSTEM ===
 def train_and_predict_advanced(df, market, prediction_date):
+    # Validate data first
+    df = validate_data_integrity(df)
+    
     # Check if we have any data
     if df.empty:
-        print(f"No data available, generating fallback data for {market}")
-        df = generate_fallback_data()
+        print(f"No valid data available for {market}")
+        return None, None, None, "No data available", 0.0
     
     df_market = df[df["Market"] == market].copy()
-    if len(df_market) < 10:  # Reduced minimum requirement
-        print(f"Insufficient data for {market}, using fallback predictions")
-        # Generate simple fallback predictions
-        np.random.seed(hash(market) % 2**32)
-        open_vals = [np.random.randint(0, 10) for _ in range(2)]
-        close_vals = [np.random.randint(0, 10) for _ in range(2)]
-        jodi_vals = [f"{np.random.randint(10, 100):02d}" for _ in range(10)]
-        return open_vals, close_vals, jodi_vals, "Fallback prediction", 0.65
+    if len(df_market) < 30:  # Require minimum 30 data points for reliable predictions
+        print(f"Insufficient data for {market} - need at least 30 records, have {len(df_market)}")
+        return None, None, None, "Insufficient data", 0.0
     
     df_market = engineer_advanced_features(df_market)
     if df_market.empty:
