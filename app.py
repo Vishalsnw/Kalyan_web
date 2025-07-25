@@ -6,6 +6,7 @@ import numpy as np
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request
 from flask_socketio import SocketIO, emit
+from flask_cors import CORS
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, VotingClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import accuracy_score
@@ -30,6 +31,7 @@ DB_FILE = "satta_analytics.db"
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
+CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # === DATABASE SETUP ===
@@ -126,7 +128,25 @@ class EnsemblePredictor:
 
 # === ANALYTICS API ENDPOINTS ===
 
+def handle_json_errors(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        try:
+            result = f(*args, **kwargs)
+            if isinstance(result, dict):
+                return jsonify(result)
+            return result
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': str(e),
+                'message': 'Internal server error'
+            }), 500
+    return decorated_function
+
 @app.route('/api/analytics/performance')
+@handle_json_errors
 def analytics_performance():
     try:
         # Calculate performance metrics for each market
@@ -902,6 +922,9 @@ def index():
 @app.route('/api/predictions')
 def get_predictions():
     try:
+        # Set proper JSON headers
+        from flask import Response
+        
         df = load_data()
         if df.empty:
             print("Main data file corrupted or empty, using fallback data")
@@ -1157,4 +1180,4 @@ scheduler.start()
 if __name__ == "__main__":
     init_database()
     port = int(os.environ.get("PORT", 5000))
-    socketio.run(app, host="0.0.0.0", port=port, debug=False)
+    socketio.run(app, host="0.0.0.0", port=port, debug=False, allow_unsafe_werkzeug=True)

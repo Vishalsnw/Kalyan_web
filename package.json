@@ -1,12 +1,7 @@
 
 {
-  "name": "satta-matka-app",
+  "name": "satta-matka-flask-app",
   "version": "1.0.0",
-  "description": "Satta Matka Prediction App",
-  "scripts": {
-    "dev": "python app.py",
-    "start": "python app.py"
-  },
-  "dependencies": {},
-  "devDependencies": {}
+  "description": "Python Flask Satta Matka App",
+  "private": true
 }
