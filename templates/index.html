@@ -156,6 +156,46 @@
             color: #667eea;
             font-size: 1.1rem;
         }
+        
+        .confidence-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48c9b0);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        .prediction-confidence {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 3px;
+        }
+        
+        .hot-number {
+            background: #ff6b6b;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-left: 5px;
+        }
+        
+        .cold-number {
+            background: #74b9ff;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-left: 5px;
+        }
 
         .loading {
             text-align: center;
