@@ -412,8 +412,14 @@ def calculate_accuracy_trend(actual_df, pred_df):
 
 def calculate_day_accuracy(actual_df, pred_df, date):
     """Calculate accuracy for a specific date"""
-    actual_day = actual_df[actual_df['Date'] == date]
-    pred_day = pred_df[pred_df['Date'] == date]
+    # Convert date columns to string format for comparison
+    actual_df_copy = actual_df.copy()
+    pred_df_copy = pred_df.copy()
+    actual_df_copy['Date'] = pd.to_datetime(actual_df_copy['Date'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
+    pred_df_copy['Date'] = pd.to_datetime(pred_df_copy['Date'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
+    
+    actual_day = actual_df_copy[actual_df_copy['Date'] == date]
+    pred_day = pred_df_copy[pred_df_copy['Date'] == date]
     
     if actual_day.empty or pred_day.empty:
         return None
@@ -463,13 +469,19 @@ def get_best_market(actual_df, pred_df):
 def calculate_market_accuracy(actual, pred):
     """Calculate accuracy for a specific market"""
     matches = 0
-    for _, actual_row in actual.iterrows():
+    # Ensure both dataframes have consistent date format
+    actual_copy = actual.copy()
+    pred_copy = pred.copy()
+    actual_copy['Date'] = pd.to_datetime(actual_copy['Date'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
+    pred_copy['Date'] = pd.to_datetime(pred_copy['Date'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
+    
+    for _, actual_row in actual_copy.iterrows():
         date = actual_row['Date']
-        pred_row = pred[pred['Date'] == date]
+        pred_row = pred_copy[pred_copy['Date'] == date]
         if not pred_row.empty and check_any_match(actual_row, pred_row.iloc[0]):
             matches += 1
     
-    return (matches / len(actual) * 100) if len(actual) > 0 else 0
+    return (matches / len(actual_copy) * 100) if len(actual_copy) > 0 else 0
 
 def calculate_confidence_scores():
     """Calculate confidence scores for current predictions"""

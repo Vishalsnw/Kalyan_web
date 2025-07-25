@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Satta Matka Pro - AI Predictions</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -18,7 +17,6 @@
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            color: #333;
         }
 
         .container {
@@ -27,108 +25,86 @@
             padding: 20px;
         }
 
-        .main-container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(10px);
-        }
-
         .header {
             text-align: center;
+            color: white;
             margin-bottom: 30px;
         }
 
         .header h1 {
-            font-size: 2.5em;
-            color: #2c3e50;
+            font-size: 2.5rem;
             margin-bottom: 10px;
-        }
-
-        .subtitle {
-            color: #7f8c8d;
-            font-size: 1.1em;
-            margin-bottom: 15px;
-        }
-
-        .version-badge {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 25px;
-            font-size: 0.9em;
-            font-weight: 500;
-        }
-
-        .date-info {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 25px;
-            text-align: center;
-            border-left: 4px solid #3498db;
         }
 
         .controls {
             display: flex;
-            gap: 15px;
             justify-content: center;
-            flex-wrap: wrap;
+            gap: 15px;
             margin-bottom: 30px;
+            flex-wrap: wrap;
         }
 
         .btn {
             padding: 12px 24px;
             border: none;
             border-radius: 8px;
-            font-size: 1em;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.3s ease;
-            display: flex;
+            text-decoration: none;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
         }
 
-        .btn.primary {
-            background: linear-gradient(45deg, #3498db, #2980b9);
+        .btn-primary {
+            background: #4CAF50;
             color: white;
         }
 
-        .btn.secondary {
-            background: linear-gradient(45deg, #2ecc71, #27ae60);
+        .btn-secondary {
+            background: #2196F3;
             color: white;
         }
 
-        .btn.warning {
-            background: linear-gradient(45deg, #f39c12, #d68910);
+        .btn-info {
+            background: #FF9800;
             color: white;
         }
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .loading {
             text-align: center;
-            padding: 40px;
+            color: white;
+            font-size: 1.2rem;
+            margin: 20px 0;
         }
 
-        .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+        .message {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            text-align: center;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .message.success {
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+        }
+
+        .message.error {
+            background: rgba(244, 67, 54, 0.9);
+            color: white;
         }
 
         .predictions-grid {
@@ -139,61 +115,72 @@
         }
 
         .market-card {
-            background: white;
+            background: rgba(255, 255, 255, 0.95);
             border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            border-left: 4px solid #3498db;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
-        .market-title {
-            font-size: 1.3em;
+        .market-name {
+            font-size: 1.3rem;
             font-weight: 600;
-            color: #2c3e50;
+            color: #333;
             margin-bottom: 15px;
+            text-align: center;
         }
 
-        .prediction-item {
-            margin-bottom: 10px;
+        .prediction-row {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
         }
 
         .prediction-label {
             font-weight: 500;
-            color: #7f8c8d;
+            color: #666;
         }
 
         .prediction-value {
-            background: #ecf0f1;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-family: monospace;
             font-weight: 600;
+            color: #333;
+            font-family: monospace;
         }
 
-        .message {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+        .date-info {
             text-align: center;
+            color: white;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
         }
 
-        .message.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        .performance-stats {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
         }
 
-        .message.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 5px 0;
         }
 
-        .results-section {
-            margin-top: 30px;
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .result-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
         .match-indicator {
@@ -204,1062 +191,151 @@
             margin-left: 10px;
         }
 
-        .match-yes {
-            background: #27ae60;
+        .match-true {
+            background: #4CAF50;
         }
 
-        .match-no {
-            background: #e74c3c;
+        .match-false {
+            background: #f44336;
         }
 
-        @media (max-width: 768px) {
-            .controls {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .btn {
-                width: 100%;
-                max-width: 300px;
-                justify-content: center;
-            }
-
-            .predictions-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            --warning-gradient: linear-gradient(135deg, #fdbb2d 0%, #22c1c3 100%);
-            --danger-gradient: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-            --glass-bg: rgba(255, 255, 255, 0.15);
-            --glass-border: rgba(255, 255, 255, 0.2);
-            --text-primary: #2d3748;
-            --text-secondary: #4a5568;
-            --text-light: #a0aec0;
-            --shadow-soft: 0 10px 40px rgba(0, 0, 0, 0.1);
-            --shadow-medium: 0 20px 60px rgba(0, 0, 0, 0.15);
-            --shadow-strong: 0 30px 80px rgba(0, 0, 0, 0.2);
-            --border-radius: 16px;
-            --border-radius-lg: 24px;
-            --animation-speed: 0.3s;
-            --animation-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--primary-gradient);
-            min-height: 100vh;
-            overflow-x: hidden;
-            position: relative;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 40% 80%, rgba(120, 219, 255, 0.3) 0%, transparent 50%);
-            z-index: -1;
-            animation: backgroundShift 20s ease-in-out infinite;
-        }
-
-        @keyframes backgroundShift {
-            0%, 100% { transform: scale(1) rotate(0deg); }
-            50% { transform: scale(1.1) rotate(1deg); }
-        }
-
-        @keyframes slideInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes slideInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes fadeInScale {
-            from {
-                opacity: 0;
-                transform: scale(0.9);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        @keyframes shimmer {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .main-container {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--border-radius-lg);
-            padding: 40px;
-            margin-bottom: 30px;
-            box-shadow: var(--shadow-medium);
-            animation: slideInDown 0.8s var(--animation-bounce);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .main-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            animation: shimmer 3s infinite;
-        }
-
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 40px;
-            position: relative;
-        }
-
-        .header h1 {
-            font-size: 3.5rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-            text-shadow: 2px 2px 20px rgba(0, 0, 0, 0.3);
-            background: linear-gradient(135deg, #fff 0%, #f0f8ff 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: float 3s ease-in-out infinite;
-        }
-
-        .header .subtitle {
-            font-size: 1.3rem;
-            font-weight: 300;
-            opacity: 0.9;
-            letter-spacing: 0.5px;
-        }
-
-        .header .version-badge {
-            display: inline-block;
-            background: var(--success-gradient);
-            color: white;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            margin-top: 10px;
-            box-shadow: var(--shadow-soft);
-            animation: pulse 2s infinite;
-        }
-
-        .date-info {
-            background: var(--glass-bg);
-            backdrop-filter: blur(15px);
-            border: 1px solid var(--glass-border);
-            padding: 20px;
-            border-radius: var(--border-radius);
-            margin-bottom: 40px;
-            text-align: center;
-            color: white;
-            font-size: 1.3rem;
-            font-weight: 500;
-            box-shadow: var(--shadow-soft);
-            animation: slideInUp 0.6s var(--animation-bounce) 0.2s both;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .date-info::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: var(--success-gradient);
-            animation: shimmer 2s infinite;
-        }
-
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 40px;
-            flex-wrap: wrap;
-            animation: slideInUp 0.6s var(--animation-bounce) 0.4s both;
-        }
-
-        .btn {
-            background: var(--glass-bg);
-            backdrop-filter: blur(15px);
-            color: white;
-            border: 2px solid var(--glass-border);
-            padding: 16px 32px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            transition: all var(--animation-speed) var(--animation-bounce);
-            position: relative;
-            overflow: hidden;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            min-width: 180px;
-            justify-content: center;
-            box-shadow: var(--shadow-soft);
-        }
-
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .btn:hover::before {
-            left: 100%;
-        }
-
-        .btn:hover {
-            transform: translateY(-3px) scale(1.02);
-            box-shadow: var(--shadow-medium);
-            border-color: rgba(255, 255, 255, 0.4);
-        }
-
-        .btn:active {
-            transform: translateY(-1px) scale(0.98);
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn.primary {
-            background: var(--success-gradient);
-            border-color: transparent;
-        }
-
-        .btn.secondary {
-            background: var(--secondary-gradient);
-            border-color: transparent;
-        }
-
-        .btn.warning {
-            background: var(--warning-gradient);
-            border-color: transparent;
-        }
-
-        .stats-container {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--border-radius-lg);
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: var(--shadow-medium);
-            animation: slideInUp 0.6s var(--animation-bounce) 0.6s both;
-        }
-
-        .stats-container h2 {
-            color: white;
-            margin-bottom: 25px;
-            font-size: 1.8rem;
-            font-weight: 600;
-            text-align: center;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-        }
-
-        .stat-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            padding: 25px;
-            border-radius: var(--border-radius);
-            text-align: center;
-            transition: all var(--animation-speed) ease;
-            position: relative;
-            overflow: hidden;
-            cursor: pointer;
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: var(--success-gradient);
-            transform: scaleX(0);
-            transition: transform var(--animation-speed) ease;
-        }
-
-        .stat-card:hover::before {
-            transform: scaleX(1);
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-medium);
-        }
-
-        .stat-card h3 {
-            margin: 0 0 15px 0;
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 1rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .stat-card span {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: white;
-            display: block;
-            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .predictions-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-            gap: 25px;
-            margin-top: 30px;
-        }
-
-        .market-card {
-            background: white;
-            border-radius: var(--border-radius-lg);
-            padding: 30px;
-            box-shadow: var(--shadow-soft);
-            transition: all var(--animation-speed) var(--animation-bounce);
-            position: relative;
-            overflow: hidden;
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            animation: fadeInScale 0.6s var(--animation-bounce);
-        }
-
-        .market-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--primary-gradient);
-        }
-
-        .market-card:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: var(--shadow-strong);
-        }
-
-        .market-card:nth-child(even)::before {
-            background: var(--secondary-gradient);
-        }
-
-        .market-card:nth-child(3n)::before {
-            background: var(--warning-gradient);
-        }
-
-        .market-name {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 25px;
-            text-align: center;
-            position: relative;
-            padding-bottom: 15px;
-        }
-
-        .market-name::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 50px;
-            height: 3px;
-            background: var(--primary-gradient);
-            border-radius: 2px;
-        }
-
-        .prediction-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 18px;
-            padding: 15px;
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-            border-radius: 12px;
-            border-left: 4px solid transparent;
-            transition: all var(--animation-speed) ease;
-            position: relative;
-        }
-
-        .prediction-row:hover {
-            background: linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 100%);
-            border-left-color: var(--primary-gradient);
-            transform: translateX(5px);
-        }
-
-        .prediction-label {
-            font-weight: 600;
-            color: var(--text-secondary);
-            min-width: 90px;
-            font-size: 0.95rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .prediction-values {
-            font-family: 'Inter', monospace;
-            font-weight: 700;
-            color: var(--text-primary);
-            font-size: 1.1rem;
-            background: white;
-            padding: 8px 16px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            border: 2px solid transparent;
-            transition: all var(--animation-speed) ease;
-        }
-
-        .prediction-values:hover {
-            border-color: var(--primary-gradient);
-            transform: scale(1.05);
-        }
-
-        .loading {
-            text-align: center;
-            color: white;
-            font-size: 1.4rem;
-            margin: 60px 0;
-            position: relative;
-        }
-
-        .loading-spinner {
-            display: inline-block;
-            width: 50px;
-            height: 50px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-            margin-bottom: 20px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .message {
-            padding: 18px 24px;
-            border-radius: var(--border-radius);
-            margin: 20px 0;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            animation: slideInUp 0.4s var(--animation-bounce);
-            box-shadow: var(--shadow-soft);
-        }
-
-        .message.success {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-        }
-
-        .message.error {
-            background: var(--danger-gradient);
-            color: white;
-        }
-
-        .message.info {
-            background: var(--success-gradient);
-            color: white;
-        }
-
-        .status-badge {
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            text-align: center;
-            display: inline-block;
-            animation: pulse 2s infinite;
-        }
-
-        .status-badge.success {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-        }
-
-        .status-badge.declared {
-            background: var(--success-gradient);
-            color: white;
-        }
-
-        .result-card {
-            border-left: 5px solid #10b981;
-        }
-
-        .result-value {
-            font-weight: 700;
-            color: #059669;
-            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-            padding: 6px 12px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
-        }
-
-        .prediction-comparison {
-            margin-top: 20px;
-            padding: 20px;
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-            border-radius: var(--border-radius);
-            border: 2px solid #e2e8f0;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .prediction-comparison::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: var(--success-gradient);
-        }
-
-        .comparison-title {
-            font-weight: 700;
-            color: var(--text-primary);
-            margin-bottom: 15px;
-            text-align: center;
-            font-size: 1.1rem;
-        }
-
-        .comparison-row {
-            display: flex;
-            align-items: center;
-            margin-bottom: 12px;
-            font-size: 0.95rem;
-            padding: 8px;
-            border-radius: 8px;
-            transition: background var(--animation-speed) ease;
-        }
-
-        .comparison-row:hover {
-            background: rgba(255, 255, 255, 0.7);
-        }
-
-        .match-indicator {
-            font-size: 1.2rem;
-            margin-left: auto;
-        }
-
-        .match-success {
-            color: #10b981;
-            filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.4));
-        }
-
-        .match-fail {
-            color: #ef4444;
-            filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.4));
-        }
-
-        .overall-match {
-            text-align: center;
-            padding: 12px;
-            border-radius: 12px;
-            font-weight: 700;
-            margin-top: 15px;
-            font-size: 1.1rem;
-            animation: pulse 2s infinite;
-        }
-
-        .overall-match.success {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
-        }
-
-        .overall-match.fail {
-            background: var(--danger-gradient);
-            color: white;
-            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
-        }
-
-        .no-results, .no-prediction {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-light);
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-            border-radius: var(--border-radius);
-            border: 2px dashed #cbd5e0;
-        }
-
-        .no-results-icon, .no-pred-icon {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            opacity: 0.6;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 15px;
-            }
-
-            .main-container {
-                padding: 25px;
-            }
-
-            .header h1 {
-                font-size: 2.5rem;
-            }
-
-            .header .subtitle {
-                font-size: 1.1rem;
-            }
-
-            .predictions-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .controls {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .btn {
-                width: 100%;
-                max-width: 300px;
-            }
-
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 480px) {
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .market-card {
-                padding: 20px;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .prediction-row {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-
-            .prediction-values {
-                width: 100%;
-                text-align: center;
-            }
-        }
-
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--primary-gradient);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--secondary-gradient);
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="main-container">
-            <div class="header">
-                <h1><i class="fas fa-chart-line"></i> Satta Matka Pro</h1>
-                <p class="subtitle">Advanced AI-Powered Predictions & Analytics</p>
-                <span class="version-badge"><i class="fas fa-rocket"></i> v2.0 Premium</span>
-            </div>
+        <div class="header">
+            <h1><i class="fas fa-chart-line"></i> Satta Matka Pro</h1>
+            <p>AI-Powered Predictions & Analysis</p>
+        </div>
 
+        <div class="controls">
+            <button class="btn btn-primary" onclick="loadPredictions()">
+                <i class="fas fa-crystal-ball"></i> Load Predictions
+            </button>
+            <button class="btn btn-secondary" onclick="generatePredictions()">
+                <i class="fas fa-robot"></i> Generate New
+            </button>
+            <button class="btn btn-info" onclick="loadTodayResults()">
+                <i class="fas fa-trophy"></i> Today's Results
+            </button>
+            <button class="btn btn-info" onclick="loadPerformance()">
+                <i class="fas fa-chart-bar"></i> Performance
+            </button>
+        </div>
+
+        <div id="loading" class="loading hidden">
+            <i class="fas fa-spinner fa-spin"></i> Loading...
+        </div>
+
+        <div id="message" class="message hidden"></div>
+
+        <div id="predictions" class="hidden">
             <div class="date-info">
-                <i class="fas fa-calendar-alt"></i>
-                <div id="predictionDate">Loading prediction date...</div>
+                <i class="fas fa-calendar"></i> Predictions for: <span id="predictionDate"></span>
             </div>
-
-            <div class="controls">
-                <button class="btn primary" onclick="loadPredictions()" id="loadBtn">
-                    <i class="fas fa-chart-bar"></i> Load Predictions
-                </button>
-                <button class="btn secondary" onclick="generatePredictions()" id="generateBtn">
-                    <i class="fas fa-magic"></i> Generate New
-                </button>
-                <button class="btn warning" onclick="loadTodayResults()" id="todayBtn">
-                    <i class="fas fa-trophy"></i> Today's Results
-                </button>
-            </div>
-
-            <div id="message"></div>
-            <div id="loading" class="loading" style="display: none;">
-                <div class="loading-spinner"></div>
-                <div>Analyzing market patterns...</div>
-            </div>
-
-            <div id="predictions" class="results-section" style="display: none;"></div>
-            <div id="todayResults" class="results-section" style="display: none;"></div>
-        </div>
-    </div>
-</body>
-</html>
-
-        <div id="accuracy-stats" class="stats-container">
-            <h2><i class="fas fa-analytics"></i> Live Accuracy Statistics</h2>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h3><i class="fas fa-bullseye"></i> Open Accuracy</h3>
-                    <span id="open-accuracy">--%</span>
-                </div>
-                <div class="stat-card">
-                    <h3><i class="fas fa-target"></i> Close Accuracy</h3>
-                    <span id="close-accuracy">--%</span>
-                </div>
-                <div class="stat-card">
-                    <h3><i class="fas fa-dice"></i> Jodi Accuracy</h3>
-                    <span id="jodi-accuracy">--%</span>
-                </div>
-                <div class="stat-card">
-                    <h3><i class="fas fa-puzzle-piece"></i> Patti Accuracy</h3>
-                    <span id="patti-accuracy">--%</span>
-                </div>
-            </div>
+            <div id="predictionsGrid" class="predictions-grid"></div>
         </div>
 
-        <div id="results-container" class="stats-container">
-            <h2><i class="fas fa-medal"></i> Today's Live Results</h2>
-            <div id="results-content">
-                <p class="loading">
-                    <div class="loading-spinner"></div>
-                    Loading today's results...
-                </p>
+        <div id="todayResults" class="hidden">
+            <div class="date-info">
+                <i class="fas fa-calendar-check"></i> Results for: <span id="resultsDate"></span>
             </div>
+            <div id="resultsGrid" class="results-grid"></div>
         </div>
 
-        <div id="predictions" class="predictions-grid"></div>
-        <div id="todayResults" class="predictions-grid" style="display: none;"></div>
+        <div id="performance" class="hidden">
+            <div class="performance-stats">
+                <h3 style="text-align: center; margin-bottom: 20px;">
+                    <i class="fas fa-chart-line"></i> Performance Statistics
+                </h3>
+                <div id="performanceContent"></div>
+            </div>
+        </div>
     </div>
 
     <script>
-        let currentPredictions = [];
-
-        // Add staggered animation to cards
-        function addStaggeredAnimation() {
-            const cards = document.querySelectorAll('.market-card');
-            cards.forEach((card, index) => {
-                card.style.animationDelay = `${index * 0.1}s`;
-            });
-        }
-
-        function showMessage(message, type = 'info') {
-            const messageDiv = document.getElementById('message');
-            const icons = {
-                success: 'fas fa-check-circle',
-                error: 'fas fa-exclamation-circle',
-                info: 'fas fa-info-circle'
-            };
-            
-            messageDiv.innerHTML = `
-                <div class="message ${type}">
-                    <i class="${icons[type]}"></i>
-                    ${message}
-                </div>
-            `;
-            
-            setTimeout(() => {
-                messageDiv.innerHTML = '';
-            }, 5000);
-        }
-
         function showLoading(show) {
-            const loadBtn = document.getElementById('loadBtn');
-            const generateBtn = document.getElementById('generateBtn');
-            const todayBtn = document.getElementById('todayBtn');
-            const loadingDiv = document.getElementById('loading');
-            
-            if (show) {
-                loadBtn.disabled = true;
-                generateBtn.disabled = true;
-                todayBtn.disabled = true;
-                loadingDiv.style.display = 'block';
-            } else {
-                loadBtn.disabled = false;
-                generateBtn.disabled = false;
-                todayBtn.disabled = false;
-                loadingDiv.style.display = 'none';
-            }
+            document.getElementById('loading').classList.toggle('hidden', !show);
         }
 
-        function displayTodayResults(data) {
-            const resultsDiv = document.getElementById('todayResults');
-
-            if (!data.results || data.results.length === 0) {
-                resultsDiv.innerHTML = `
-                    <div class="no-results">
-                        <div class="no-results-icon"><i class="fas fa-calendar-times"></i></div>
-                        <div class="no-results-text">No results available for today</div>
-                    </div>
-                `;
-                return;
-            }
-
-            const html = data.results.map((result, index) => {
-                const matches = result.matches || {};
-                let predictionHTML = '';
-
-                if (result.prediction) {
-                    const getMatchIcon = (isMatch) => isMatch ? '✅' : '❌';
-                    const getMatchClass = (isMatch) => isMatch ? 'match-success' : 'match-fail';
-
-                    const predOpen = result.prediction.Open ? result.prediction.Open.split(',').map(s => s.trim()) : [];
-                    const predClose = result.prediction.Close ? result.prediction.Close.split(',').map(s => s.trim()) : [];
-                    const predJodis = result.prediction.Jodis ? result.prediction.Jodis.split(',').map(s => s.trim()).slice(0, 5) : [];
-                    const predPattis = result.prediction.Pattis ? result.prediction.Pattis.split(',').map(s => s.trim()) : [];
-
-                    predictionHTML = `
-                        <div class="prediction-comparison">
-                            <div class="comparison-title"><i class="fas fa-crosshairs"></i> Prediction vs Result</div>
-                            <div class="comparison-row">
-                                <span class="comparison-label"><i class="fas fa-play"></i> Open:</span>
-                                <span class="comparison-pred">[${predOpen.join(', ')}]</span>
-                                <span class="comparison-vs">vs</span>
-                                <span class="comparison-actual">${result.actual.open}</span>
-                                <span class="match-indicator ${getMatchClass(matches.open)}">${getMatchIcon(matches.open)}</span>
-                            </div>
-                            <div class="comparison-row">
-                                <span class="comparison-label"><i class="fas fa-stop"></i> Close:</span>
-                                <span class="comparison-pred">[${predClose.join(', ')}]</span>
-                                <span class="comparison-vs">vs</span>
-                                <span class="comparison-actual">${result.actual.close}</span>
-                                <span class="match-indicator ${getMatchClass(matches.close)}">${getMatchIcon(matches.close)}</span>
-                            </div>
-                            <div class="comparison-row">
-                                <span class="comparison-label"><i class="fas fa-dice-two"></i> Jodi:</span>
-                                <span class="comparison-pred">[${predJodis.join(', ')}...]</span>
-                                <span class="comparison-vs">vs</span>
-                                <span class="comparison-actual">${result.actual.jodi}</span>
-                                <span class="match-indicator ${getMatchClass(matches.jodi)}">${getMatchIcon(matches.jodi)}</span>
-                            </div>
-                            <div class="comparison-row">
-                                <span class="comparison-label"><i class="fas fa-puzzle-piece"></i> Patti:</span>
-                                <span class="comparison-pred">[${predPattis.join(', ')}]</span>
-                                <span class="comparison-vs">vs</span>
-                                <span class="comparison-actual">[${result.actual.pattis ? result.actual.pattis.join(', ') : 'N/A'}]</span>
-                                <span class="match-indicator ${getMatchClass(matches.patti)}">${getMatchIcon(matches.patti)}</span>
-                            </div>
-                            <div class="overall-match ${matches.open || matches.close || matches.jodi || matches.patti ? 'success' : 'fail'}">
-                                ${matches.open || matches.close || matches.jodi || matches.patti ? '🎉 PREDICTION MATCH!' : '😔 No Match'}
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    predictionHTML = `
-                        <div class="no-prediction">
-                            <span class="no-pred-icon"><i class="fas fa-chart-line"></i></span>
-                            <span class="no-pred-text">No prediction available for comparison</span>
-                        </div>
-                    `;
-                }
-
-                return `
-                    <div class="market-card result-card" style="animation-delay: ${index * 0.1}s">
-                        <div class="market-name"><i class="fas fa-store"></i> ${result.market}</div>
-                        <div class="prediction-row">
-                            <span class="prediction-label"><i class="fas fa-play"></i> Open:</span>
-                            <span class="result-value">${result.actual.open}</span>
-                        </div>
-                        <div class="prediction-row">
-                            <span class="prediction-label"><i class="fas fa-stop"></i> Close:</span>
-                            <span class="result-value">${result.actual.close}</span>
-                        </div>
-                        <div class="prediction-row">
-                            <span class="prediction-label"><i class="fas fa-dice-two"></i> Jodi:</span>
-                            <span class="result-value">${result.actual.jodi}</span>
-                        </div>
-                        <div class="status-badge declared"><i class="fas fa-check"></i> DECLARED</div>
-                        ${predictionHTML}
-                    </div>
-                `;
-            }).join('');
-
-            resultsDiv.innerHTML = html;
-            addStaggeredAnimation();
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            messageEl.classList.remove('hidden');
+            setTimeout(() => messageEl.classList.add('hidden'), 5000);
         }
 
-        function updatePredictionDate(date) {
-            document.getElementById('predictionDate').innerHTML = `
-                <strong>${date}</strong>
-            `;
-        }
-
-        function renderPredictions(predictions, date) {
-            const container = document.getElementById('predictions');
-            updatePredictionDate(date);
-
-            if (!predictions || predictions.length === 0) {
-                container.innerHTML = '<div class="message error"><i class="fas fa-exclamation-triangle"></i> No predictions available</div>';
-                return;
-            }
-
-            container.innerHTML = predictions.map((pred, index) => {
-                if (pred.status === 'error') {
-                    return `
-                        <div class="market-card" style="animation-delay: ${index * 0.1}s">
-                            <div class="market-name"><i class="fas fa-store"></i> ${pred.market}</div>
-                            <div class="message error">
-                                <i class="fas fa-exclamation-triangle"></i> ${pred.message}
-                            </div>
-                        </div>
-                    `;
-                }
-
-                return `
-                    <div class="market-card" style="animation-delay: ${index * 0.1}s">
-                        <div class="market-name"><i class="fas fa-store"></i> ${pred.market}</div>
-                        <div class="prediction-row">
-                            <span class="prediction-label"><i class="fas fa-play"></i> Open:</span>
-                            <span class="prediction-values">${pred.open.join(', ')}</span>
-                        </div>
-                        <div class="prediction-row">
-                            <span class="prediction-label"><i class="fas fa-stop"></i> Close:</span>
-                            <span class="prediction-values">${pred.close.join(', ')}</span>
-                        </div>
-                        <div class="prediction-row">
-                            <span class="prediction-label"><i class="fas fa-puzzle-piece"></i> Pattis:</span>
-                            <span class="prediction-values">${pred.pattis.join(', ')}</span>
-                        </div>
-                        <div class="prediction-row">
-                            <span class="prediction-label"><i class="fas fa-dice"></i> Jodis:</span>
-                            <span class="prediction-values">${pred.jodis.join(', ')}</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            addStaggeredAnimation();
+        function hideAllSections() {
+            document.getElementById('predictions').classList.add('hidden');
+            document.getElementById('todayResults').classList.add('hidden');
+            document.getElementById('performance').classList.add('hidden');
         }
 
         function loadPredictions() {
-            const loadingDiv = document.getElementById('loading');
-            const predictionsDiv = document.getElementById('predictions');
-            const resultsDiv = document.getElementById('todayResults');
-            const loadBtn = document.getElementById('loadBtn');
-
-            loadingDiv.style.display = 'block';
-            predictionsDiv.style.display = 'none';
-            resultsDiv.style.display = 'none';
-            loadBtn.disabled = true;
+            showLoading(true);
+            hideAllSections();
 
             fetch('/api/predictions')
                 .then(response => response.json())
                 .then(data => {
-                    loadingDiv.style.display = 'none';
-                    loadBtn.disabled = false;
-
+                    showLoading(false);
                     if (data.success) {
-                        currentPredictions = data.predictions;
-                        renderPredictions(data.predictions, data.date);
-                        predictionsDiv.style.display = 'grid';
-                        showMessage('Predictions loaded successfully!', 'success');
+                        displayPredictions(data);
                     } else {
-                        showMessage(`Error loading predictions: ${data.error}`, 'error');
+                        showMessage(`Error: ${data.error}`, 'error');
                     }
                 })
                 .catch(error => {
-                    loadingDiv.style.display = 'none';
-                    loadBtn.disabled = false;
+                    showLoading(false);
                     showMessage(`Network error: ${error.message}`, 'error');
                 });
+        }
+
+        function displayPredictions(data) {
+            document.getElementById('predictionDate').textContent = data.date;
+            const grid = document.getElementById('predictionsGrid');
+            grid.innerHTML = '';
+
+            data.predictions.forEach(pred => {
+                const card = document.createElement('div');
+                card.className = 'market-card';
+
+                if (pred.status === 'error') {
+                    card.innerHTML = `
+                        <div class="market-name">${pred.market}</div>
+                        <div style="color: #f44336; text-align: center;">
+                            <i class="fas fa-exclamation-triangle"></i> ${pred.message}
+                        </div>
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <div class="market-name">${pred.market}</div>
+                        <div class="prediction-row">
+                            <span class="prediction-label"><i class="fas fa-door-open"></i> Open:</span>
+                            <span class="prediction-value">${pred.open.join(', ')}</span>
+                        </div>
+                        <div class="prediction-row">
+                            <span class="prediction-label"><i class="fas fa-door-closed"></i> Close:</span>
+                            <span class="prediction-value">${pred.close.join(', ')}</span>
+                        </div>
+                        <div class="prediction-row">
+                            <span class="prediction-label"><i class="fas fa-layer-group"></i> Pattis:</span>
+                            <span class="prediction-value">${pred.pattis.join(', ')}</span>
+                        </div>
+                        <div class="prediction-row">
+                            <span class="prediction-label"><i class="fas fa-dice"></i> Top Jodis:</span>
+                            <span class="prediction-value">${pred.jodis.slice(0, 5).join(', ')}</span>
+                        </div>
+                    `;
+                }
+                grid.appendChild(card);
+            });
+
+            document.getElementById('predictions').classList.remove('hidden');
         }
 
         async function generatePredictions() {
@@ -1288,8 +364,7 @@
 
         function loadTodayResults() {
             showLoading(true);
-            document.getElementById('predictions').style.display = 'none';
-            document.getElementById('todayResults').style.display = 'none';
+            hideAllSections();
 
             fetch('/api/today-results')
                 .then(response => response.json())
@@ -1297,9 +372,8 @@
                     showLoading(false);
                     if (data.success) {
                         displayTodayResults(data);
-                        document.getElementById('todayResults').style.display = 'block';
                     } else {
-                        showMessage(`Error loading results: ${data.error}`, 'error');
+                        showMessage(`Error: ${data.error}`, 'error');
                     }
                 })
                 .catch(error => {
@@ -1308,201 +382,129 @@
                 });
         }
 
-        function displayPredictions(data) {
-            const container = document.getElementById('predictions');
-            const dateElement = document.getElementById('predictionDate');
-            
-            dateElement.textContent = `Predictions for ${data.date}`;
-            
-            let html = '<div class="predictions-grid">';
-            
-            data.predictions.forEach(prediction => {
-                if (prediction.status === 'success') {
-                    html += `
-                        <div class="market-card">
-                            <div class="market-title">${prediction.market}</div>
-                            <div class="prediction-item">
-                                <span class="prediction-label">Open:</span>
-                                <span class="prediction-value">${prediction.open.join(', ')}</span>
-                            </div>
-                            <div class="prediction-item">
-                                <span class="prediction-label">Close:</span>
-                                <span class="prediction-value">${prediction.close.join(', ')}</span>
-                            </div>
-                            <div class="prediction-item">
-                                <span class="prediction-label">Pattis:</span>
-                                <span class="prediction-value">${prediction.pattis.join(', ')}</span>
-                            </div>
-                            <div class="prediction-item">
-                                <span class="prediction-label">Top Jodis:</span>
-                                <span class="prediction-value">${prediction.jodis.slice(0, 5).join(', ')}</span>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    html += `
-                        <div class="market-card">
-                            <div class="market-title">${prediction.market}</div>
-                            <div class="message error">${prediction.message}</div>
-                        </div>
-                    `;
-                }
-            });
-            
-            html += '</div>';
-            container.innerHTML = html;
-            container.style.display = 'block';
-        }
-
         function displayTodayResults(data) {
-            const container = document.getElementById('todayResults');
-            
-            let html = '<h2 style="text-align: center; margin-bottom: 20px;">Today\'s Results</h2>';
-            html += '<div class="predictions-grid">';
-            
+            document.getElementById('resultsDate').textContent = data.date;
+            const grid = document.getElementById('resultsGrid');
+            grid.innerHTML = '';
+
+            if (data.results.length === 0) {
+                grid.innerHTML = '<div style="text-align: center; color: #666;">No results available for today</div>';
+            }
+
             data.results.forEach(result => {
+                const card = document.createElement('div');
+                card.className = 'result-card';
+
                 const prediction = result.prediction;
                 const matches = result.matches;
-                
-                html += `
-                    <div class="market-card">
-                        <div class="market-title">${result.market}</div>
-                        <div class="prediction-item">
-                            <span class="prediction-label">Actual Open:</span>
-                            <span class="prediction-value">${result.actual.open}</span>
-                            ${matches && matches.open !== undefined ? 
-                                `<span class="match-indicator ${matches.open ? 'match-yes' : 'match-no'}"></span>` : ''}
-                        </div>
-                        <div class="prediction-item">
-                            <span class="prediction-label">Actual Close:</span>
-                            <span class="prediction-value">${result.actual.close}</span>
-                            ${matches && matches.close !== undefined ? 
-                                `<span class="match-indicator ${matches.close ? 'match-yes' : 'match-no'}"></span>` : ''}
-                        </div>
-                        <div class="prediction-item">
-                            <span class="prediction-label">Actual Jodi:</span>
-                            <span class="prediction-value">${result.actual.jodi}</span>
-                            ${matches && matches.jodi !== undefined ? 
-                                `<span class="match-indicator ${matches.jodi ? 'match-yes' : 'match-no'}"></span>` : ''}
-                        </div>
-                        ${prediction ? `
-                            <hr style="margin: 15px 0;">
-                            <div class="prediction-item">
-                                <span class="prediction-label">Predicted Open:</span>
-                                <span class="prediction-value">${prediction.Open || 'N/A'}</span>
-                            </div>
-                            <div class="prediction-item">
-                                <span class="prediction-label">Predicted Close:</span>
-                                <span class="prediction-value">${prediction.Close || 'N/A'}</span>
-                            </div>
-                        ` : '<div class="message error">No predictions available</div>'}
+
+                card.innerHTML = `
+                    <div class="market-name">${result.market}</div>
+                    <div class="prediction-row">
+                        <span class="prediction-label">Actual Open:</span>
+                        <span class="prediction-value">${result.actual.open}</span>
                     </div>
+                    <div class="prediction-row">
+                        <span class="prediction-label">Actual Close:</span>
+                        <span class="prediction-value">${result.actual.close}</span>
+                    </div>
+                    <div class="prediction-row">
+                        <span class="prediction-label">Actual Jodi:</span>
+                        <span class="prediction-value">${result.actual.jodi}</span>
+                    </div>
+                    ${prediction ? `
+                        <hr style="margin: 15px 0;">
+                        <div class="prediction-row">
+                            <span class="prediction-label">Open Match:</span>
+                            <span class="prediction-value">
+                                ${matches.open ? '✅' : '❌'}
+                                <span class="match-indicator ${matches.open ? 'match-true' : 'match-false'}"></span>
+                            </span>
+                        </div>
+                        <div class="prediction-row">
+                            <span class="prediction-label">Close Match:</span>
+                            <span class="prediction-value">
+                                ${matches.close ? '✅' : '❌'}
+                                <span class="match-indicator ${matches.close ? 'match-true' : 'match-false'}"></span>
+                            </span>
+                        </div>
+                        <div class="prediction-row">
+                            <span class="prediction-label">Jodi Match:</span>
+                            <span class="prediction-value">
+                                ${matches.jodi ? '✅' : '❌'}
+                                <span class="match-indicator ${matches.jodi ? 'match-true' : 'match-false'}"></span>
+                            </span>
+                        </div>
+                        <div class="prediction-row">
+                            <span class="prediction-label">Patti Match:</span>
+                            <span class="prediction-value">
+                                ${matches.patti ? '✅' : '❌'}
+                                <span class="match-indicator ${matches.patti ? 'match-true' : 'match-false'}"></span>
+                            </span>
+                        </div>
+                    ` : '<div style="text-align: center; color: #999;">No prediction available</div>'}
                 `;
+                grid.appendChild(card);
             });
-            
-            html += '</div>';
-            container.innerHTML = html;
+
+            document.getElementById('todayResults').classList.remove('hidden');
         }
 
-        function showMessage(message, type) {
-            const msgElement = document.getElementById('message');
-            msgElement.innerHTML = `<div class="message ${type}">${message}</div>`;
-            setTimeout(() => {
-                msgElement.innerHTML = '';
-            }, 5000);
-        }
+        function loadPerformance() {
+            showLoading(true);
+            hideAllSections();
 
-        function showLoading(show) {
-            const loadingElement = document.getElementById('loading');
-            loadingElement.style.display = show ? 'block' : 'none';
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            loadPredictions();
-        });
-    </script>
-</head>alculateAccuracy(data.results);
-                        document.getElementById('todayResults').style.display = 'grid';
-                        showMessage('Today\'s results loaded successfully!', 'success');
+            fetch('/api/performance')
+                .then(response => response.json())
+                .then(data => {
+                    showLoading(false);
+                    if (data.success) {
+                        displayPerformance(data.stats);
                     } else {
-                        showMessage('Error loading results: ' + (data.error || 'Unknown error'), 'error');
+                        showMessage(`Error: ${data.error}`, 'error');
                     }
                 })
                 .catch(error => {
                     showLoading(false);
-                    console.error('Error:', error);
-                    showMessage('Network error: ' + error.message, 'error');
+                    showMessage(`Network error: ${error.message}`, 'error');
                 });
         }
 
-        function calculateAccuracy(results) {
-            if (results.length === 0) return;
+        function displayPerformance(stats) {
+            const content = document.getElementById('performanceContent');
+            content.innerHTML = `
+                <div class="stat-row">
+                    <span><i class="fas fa-chart-pie"></i> Total Predictions:</span>
+                    <span><strong>${stats.total_predictions}</strong></span>
+                </div>
+                <div class="stat-row">
+                    <span><i class="fas fa-store"></i> Markets Covered:</span>
+                    <span><strong>${stats.markets_covered}</strong></span>
+                </div>
+                <div class="stat-row">
+                    <span><i class="fas fa-trophy"></i> Best Market:</span>
+                    <span><strong>${stats.best_performing_market.market} (${stats.best_performing_market.accuracy.toFixed(1)}%)</strong></span>
+                </div>
+                <div class="stat-row">
+                    <span><i class="fas fa-brain"></i> Model Confidence:</span>
+                    <span><strong>${stats.prediction_confidence.model_confidence}%</strong></span>
+                </div>
+                <div class="stat-row">
+                    <span><i class="fas fa-pattern"></i> Pattern Strength:</span>
+                    <span><strong>${stats.prediction_confidence.pattern_strength}%</strong></span>
+                </div>
+                <div class="stat-row">
+                    <span><i class="fas fa-bullseye"></i> Overall Confidence:</span>
+                    <span><strong>${stats.prediction_confidence.overall_confidence}%</strong></span>
+                </div>
+            `;
 
-            let openCorrect = 0, closeCorrect = 0, jodiCorrect = 0, pattiCorrect = 0;
-            let total = results.length;
-
-            results.forEach(result => {
-                if (result.matches?.open) openCorrect++;
-                if (result.matches?.close) closeCorrect++;
-                if (result.matches?.jodi) jodiCorrect++;
-                if (result.matches?.patti) pattiCorrect++;
-            });
-
-            // Animate counter updates
-            animateCounter('open-accuracy', Math.round((openCorrect / total) * 100));
-            animateCounter('close-accuracy', Math.round((closeCorrect / total) * 100));
-            animateCounter('jodi-accuracy', Math.round((jodiCorrect / total) * 100));
-            animateCounter('patti-accuracy', Math.round((pattiCorrect / total) * 100));
+            document.getElementById('performance').classList.remove('hidden');
         }
 
-        function animateCounter(elementId, targetValue) {
-            const element = document.getElementById(elementId);
-            const startValue = 0;
-            const duration = 1500;
-            const startTime = performance.now();
-
-            function updateCounter(currentTime) {
-                const elapsed = currentTime - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                const currentValue = Math.round(startValue + (targetValue - startValue) * progress);
-                
-                element.textContent = currentValue + '%';
-                
-                if (progress < 1) {
-                    requestAnimationFrame(updateCounter);
-                }
-            }
-
-            requestAnimationFrame(updateCounter);
-        }
-
-        // Initialize app
+        // Load predictions on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadPredictions();
-            
-            // Add scroll animations
-            const observerOptions = {
-                threshold: 0.1,
-                rootMargin: '0px 0px -50px 0px'
-            };
-
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.style.opacity = '1';
-                        entry.target.style.transform = 'translateY(0)';
-                    }
-                });
-            }, observerOptions);
-
-            // Observe all cards for scroll animations
-            document.querySelectorAll('.market-card, .stat-card').forEach(card => {
-                card.style.opacity = '0';
-                card.style.transform = 'translateY(20px)';
-                card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-                observer.observe(card);
-            });
         });
     </script>
 </body>
