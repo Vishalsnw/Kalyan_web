@@ -21,6 +21,38 @@
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-card h3 {
+            margin: 0 0 10px 0;
+            color: #fff;
+            font-size: 16px;
+        }
+
+        .stat-card span {
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
         }
 
         .header {
@@ -358,6 +390,37 @@
             <div>Loading predictions...</div>
         </div>
 
+        <div id="accuracy-stats" class="container">
+            <h2>📈 Accuracy Statistics</h2>
+            <div id="stats-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Open Accuracy</h3>
+                        <span id="open-accuracy">--%</span>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Close Accuracy</h3>
+                        <span id="close-accuracy">--%</span>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Jodi Accuracy</h3>
+                        <span id="jodi-accuracy">--%</span>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Patti Accuracy</h3>
+                        <span id="patti-accuracy">--%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="results-container">
+            <h2>📊 Today's Results</h2>
+            <div id="results-content">
+                <p class="loading">Loading today's results...</p>
+            </div>
+        </div>
+
         <div id="predictions" class="predictions-grid"></div>
         <div id="todayResults" class="predictions-grid" style="display: none;"></div>
     </div>
@@ -593,6 +656,48 @@
             } finally {
                 showLoading(false);
             }
+        }
+
+        function loadTodayResults() {
+            fetch('/api/today-results')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayTodayResults(data.results, data.date);
+                        calculateAccuracy(data.results);
+                    } else {
+                        document.getElementById('results-content').innerHTML = 
+                            '<p class="error">Error loading results: ' + (data.error || 'Unknown error') + '</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('results-content').innerHTML = 
+                        '<p class="error">Network error: ' + error.message + '</p>';
+                });
+        }
+
+        function calculateAccuracy(results) {
+            if (results.length === 0) return;
+
+            let openCorrect = 0, closeCorrect = 0, jodiCorrect = 0, pattiCorrect = 0;
+            let total = results.length;
+
+            results.forEach(result => {
+                if (result.matches?.open) openCorrect++;
+                if (result.matches?.close) closeCorrect++;
+                if (result.matches?.jodi) jodiCorrect++;
+                if (result.matches?.patti) pattiCorrect++;
+            });
+
+            document.getElementById('open-accuracy').textContent = 
+                Math.round((openCorrect / total) * 100) + '%';
+            document.getElementById('close-accuracy').textContent = 
+                Math.round((closeCorrect / total) * 100) + '%';
+            document.getElementById('jodi-accuracy').textContent = 
+                Math.round((jodiCorrect / total) * 100) + '%';
+            document.getElementById('patti-accuracy').textContent = 
+                Math.round((pattiCorrect / total) * 100) + '%';
         }
 
         // Load predictions on page load

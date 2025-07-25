@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template, jsonify
 import pandas as pd
 import numpy as np
@@ -161,83 +160,77 @@ def get_predictions():
 @app.route('/api/today-results')
 def get_today_results():
     try:
-        df = load_data()
         today = datetime.now().strftime("%d/%m/%Y")
-        today_results = df[df['Date'] == today]
-        
-        # Load today's predictions
+
+        # Load actual results
+        try:
+            df = pd.read_csv(DATA_FILE)
+            df = df[df['Date'] == today]
+        except:
+            df = pd.DataFrame()
+
+        # Load predictions
         try:
             pred_df = pd.read_csv(PRED_FILE)
-            pred_df['Date'] = pd.to_datetime(pred_df['Date'], dayfirst=True, errors='coerce')
-            today_dt = pd.to_datetime(today, dayfirst=True)
-            pred_df = pred_df[pred_df['Date'] == today_dt]
-            pred_df['Date'] = pred_df['Date'].dt.strftime("%d/%m/%Y")
-        except FileNotFoundError:
+            pred_df = pred_df[pred_df['Date'] == today]
+        except:
             pred_df = pd.DataFrame()
-        
+
         results = []
-        for _, row in today_results.iterrows():
-            market = row["Market"]
-            actual_open = str(row["Open"])
-            actual_close = str(row["Close"])
-            actual_jodi = str(row["Jodi"])
-            
-            # Find prediction for this market
-            pred_row = pred_df[pred_df["Market"] == market]
-            prediction_match = {
-                "has_prediction": False,
-                "open_match": False,
-                "close_match": False,
-                "jodi_match": False,
-                "predicted_open": [],
-                "predicted_close": [],
-                "predicted_jodis": []
+        for _, actual_row in df.iterrows():
+            market = actual_row['Market']
+
+            # Find corresponding prediction
+            pred_row = pred_df[pred_df['Market'] == market]
+            prediction = pred_row.iloc[0].to_dict() if not pred_row.empty else None
+
+            result = {
+                'market': market,
+                'actual': {
+                    'open': str(actual_row['Open']),
+                    'close': str(actual_row['Close']),
+                    'jodi': str(actual_row['Jodi'])
+                },
+                'prediction': prediction,
+                'matches': {}
             }
-            
-            if not pred_row.empty:
-                pred = pred_row.iloc[0]
-                prediction_match["has_prediction"] = True
-                
-                # Parse predictions
-                pred_open = [x.strip() for x in str(pred.get("Open", "")).split(",") if x.strip()]
-                pred_close = [x.strip() for x in str(pred.get("Close", "")).split(",") if x.strip()]
-                pred_jodis = [x.strip() for x in str(pred.get("Jodis", "")).split(",") if x.strip()]
-                
-                prediction_match["predicted_open"] = pred_open
-                prediction_match["predicted_close"] = pred_close
-                prediction_match["predicted_jodis"] = pred_jodis
-                
+
+            if prediction:
                 # Check matches
-                if actual_jodi and len(actual_jodi) >= 2:
-                    prediction_match["open_match"] = actual_jodi[0] in pred_open
-                    prediction_match["close_match"] = actual_jodi[1] in pred_close
-                prediction_match["jodi_match"] = actual_jodi in pred_jodis
-            
-            results.append({
-                "market": market,
-                "date": row["Date"],
-                "open": actual_open,
-                "close": actual_close,
-                "jodi": actual_jodi,
-                "status": "declared",
-                "prediction_match": prediction_match
-            })
-        
-        # If no results for today, check if it's a valid trading day
-        if not results:
-            return jsonify({
-                "success": True,
-                "date": today,
-                "results": [],
-                "message": "No results declared yet for today"
-            })
-        
+                pred_open = [x.strip() for x in str(prediction.get('Open', '')).split(',')]
+                pred_close = [x.strip() for x in str(prediction.get('Close', '')).split(',')]
+                pred_jodi = [x.strip() for x in str(prediction.get('Jodis', '')).split(',')]
+                pred_pattis = [x.strip() for x in str(prediction.get('Pattis', '')).split(',')]
+
+                actual_jodi = str(actual_row['Jodi']).zfill(2)
+                actual_open_digit = actual_jodi[0]
+                actual_close_digit = actual_jodi[1]
+
+                # Generate actual pattis from actual numbers
+                actual_open = int(actual_row['Open'])
+                actual_close = int(actual_row['Close'])
+                actual_pattis = generate_pattis([actual_open], [actual_close])
+
+                # Check patti matches
+                patti_match = any(patti in pred_pattis for patti in actual_pattis)
+
+                result['matches'] = {
+                    'open': actual_open_digit in pred_open,
+                    'close': actual_close_digit in pred_close,
+                    'jodi': actual_jodi in pred_jodi,
+                    'patti': patti_match
+                }
+
+                result['actual']['pattis'] = actual_pattis
+
+            results.append(result)
+
         return jsonify({
             "success": True,
-            "date": today,
-            "results": results
+            "results": results,
+            "date": today
         })
-        
+
     except Exception as e:
         return jsonify({
             "success": False,
