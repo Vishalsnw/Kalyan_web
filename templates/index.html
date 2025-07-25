@@ -1,0 +1,327 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Satta Matka Predictions</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .date-info {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .predictions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .market-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .market-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .market-name {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .prediction-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .prediction-label {
+            font-weight: bold;
+            color: #555;
+            min-width: 80px;
+        }
+
+        .prediction-values {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.2rem;
+            margin: 50px 0;
+        }
+
+        .error {
+            background: #ff6b6b;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .success {
+            background: #4CAF50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .error-card {
+            background: #ffe6e6;
+            border: 1px solid #ff9999;
+            color: #cc0000;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .predictions-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .btn {
+                display: block;
+                width: 100%;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Satta Matka Predictions</h1>
+            <p>AI-Powered Predictions for All Markets</p>
+        </div>
+
+        <div class="date-info">
+            <div id="predictionDate">Loading prediction date...</div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="loadPredictions()" id="loadBtn">
+                📊 Load Predictions
+            </button>
+            <button class="btn" onclick="generatePredictions()" id="generateBtn">
+                🔄 Generate New Predictions
+            </button>
+        </div>
+
+        <div id="message"></div>
+        <div id="loading" class="loading" style="display: none;">
+            <div>Loading predictions...</div>
+        </div>
+
+        <div id="predictions" class="predictions-grid"></div>
+    </div>
+
+    <script>
+        let currentPredictions = [];
+
+        function showMessage(message, type = 'info') {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="${type}">${message}</div>`;
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('loadBtn').disabled = show;
+            document.getElementById('generateBtn').disabled = show;
+        }
+
+        function updatePredictionDate(date) {
+            document.getElementById('predictionDate').innerHTML = `
+                📅 Predictions for: <strong>${date}</strong>
+            `;
+        }
+
+        function renderPredictions(predictions, date) {
+            const container = document.getElementById('predictions');
+            updatePredictionDate(date);
+            
+            if (!predictions || predictions.length === 0) {
+                container.innerHTML = '<div class="error">No predictions available</div>';
+                return;
+            }
+
+            container.innerHTML = predictions.map(pred => {
+                if (pred.status === 'error') {
+                    return `
+                        <div class="market-card">
+                            <div class="market-name">${pred.market}</div>
+                            <div class="error-card">
+                                ⚠️ ${pred.message}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="market-card">
+                        <div class="market-name">${pred.market}</div>
+                        <div class="prediction-row">
+                            <span class="prediction-label">🔢 Open:</span>
+                            <span class="prediction-values">${pred.open.join(', ')}</span>
+                        </div>
+                        <div class="prediction-row">
+                            <span class="prediction-label">🔢 Close:</span>
+                            <span class="prediction-values">${pred.close.join(', ')}</span>
+                        </div>
+                        <div class="prediction-row">
+                            <span class="prediction-label">🎰 Pattis:</span>
+                            <span class="prediction-values">${pred.pattis.join(', ')}</span>
+                        </div>
+                        <div class="prediction-row">
+                            <span class="prediction-label">🔟 Jodis:</span>
+                            <span class="prediction-values">${pred.jodis.join(', ')}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function loadPredictions() {
+            showLoading(true);
+            try {
+                const response = await fetch('/api/predictions');
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentPredictions = data.predictions;
+                    renderPredictions(data.predictions, data.date);
+                    showMessage('✅ Predictions loaded successfully!', 'success');
+                } else {
+                    showMessage(`❌ Error loading predictions: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`❌ Network error: ${error.message}`, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function generatePredictions() {
+            showLoading(true);
+            try {
+                const response = await fetch('/api/generate-predictions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(`✅ ${data.message} (${data.count} markets)`, 'success');
+                    // Reload predictions after generating
+                    setTimeout(() => loadPredictions(), 1000);
+                } else {
+                    showMessage(`❌ Error generating predictions: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`❌ Network error: ${error.message}`, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Load predictions on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPredictions();
+        });
+    </script>
+</body>
+</html>
