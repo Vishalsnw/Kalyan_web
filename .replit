@@ -6,7 +6,7 @@ channel = "stable-25_05"
 packages = ["glibcLocales"]
 
 [deployment]
-run = ["sh", "-c", "npm run dev"]
+run = ["sh", "-c", "python app.py"]
 
 [workflows]
 runButton = "Run Web App"
@@ -19,3 +19,7 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python app.py"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
