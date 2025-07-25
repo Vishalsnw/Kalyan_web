@@ -227,7 +227,7 @@
         </div>
 
         <div id="loading" class="loading hidden">
-            <i class="fas fa-spinner fa-spin"></i> Loading...
+            <i class="fas fa-spinner fa-spin"></i> <span id="loadingText">Loading predictions...</span>
         </div>
 
         <div id="message" class="message hidden"></div>
@@ -257,8 +257,11 @@
     </div>
 
     <script>
-        function showLoading(show) {
-            document.getElementById('loading').classList.toggle('hidden', !show);
+        function showLoading(show, text = 'Loading predictions...') {
+            const loadingEl = document.getElementById('loading');
+            const textEl = document.getElementById('loadingText');
+            loadingEl.classList.toggle('hidden', !show);
+            if (textEl) textEl.textContent = text;
         }
 
         function showMessage(text, type) {
@@ -279,19 +282,39 @@
             showLoading(true);
             hideAllSections();
 
-            fetch('/api/predictions')
-                .then(response => response.json())
+            // Add timeout to prevent infinite loading
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds
+
+            fetch('/api/predictions', { signal: controller.signal })
+                .then(response => {
+                    clearTimeout(timeoutId);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     showLoading(false);
                     if (data.success) {
                         displayPredictions(data);
+                        if (data.cached) {
+                            showMessage('Loaded cached predictions successfully!', 'success');
+                        } else {
+                            showMessage('Fresh predictions generated successfully!', 'success');
+                        }
                     } else {
                         showMessage(`Error: ${data.error}`, 'error');
                     }
                 })
                 .catch(error => {
+                    clearTimeout(timeoutId);
                     showLoading(false);
-                    showMessage(`Network error: ${error.message}`, 'error');
+                    if (error.name === 'AbortError') {
+                        showMessage('Request timed out. Please try again.', 'error');
+                    } else {
+                        showMessage(`Network error: ${error.message}`, 'error');
+                    }
                 });
         }
 

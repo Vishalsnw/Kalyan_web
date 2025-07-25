@@ -239,35 +239,72 @@ def get_predictions():
                 "success": False,
                 "error": "Data file not found. Please ensure satta_data.csv exists."
             }), 404
+
+        # Check if predictions already exist for today
+        prediction_date = next_prediction_date()
+        if os.path.exists(PRED_FILE):
+            try:
+                existing_preds = pd.read_csv(PRED_FILE)
+                existing_preds['Date'] = pd.to_datetime(existing_preds['Date'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
+                today_preds = existing_preds[existing_preds['Date'] == prediction_date]
+                
+                if len(today_preds) > 0:
+                    # Return existing predictions
+                    predictions = []
+                    for _, row in today_preds.iterrows():
+                        predictions.append({
+                            "market": row['Market'],
+                            "status": "success",
+                            "open": row['Open'].split(', '),
+                            "close": row['Close'].split(', '),
+                            "pattis": row['Pattis'].split(', '),
+                            "jodis": row['Jodis'].split(', '),
+                            "date": prediction_date
+                        })
+                    
+                    return jsonify({
+                        "success": True,
+                        "date": prediction_date,
+                        "predictions": predictions,
+                        "cached": True
+                    })
+            except Exception as e:
+                print(f"Error loading cached predictions: {e}")
             
         df = load_data()
-        prediction_date = next_prediction_date()
         predictions = []
 
         for market in MARKETS:
-            open_vals, close_vals, jodis, status = train_and_predict(df, market, prediction_date)
+            try:
+                open_vals, close_vals, jodis, status = train_and_predict(df, market, prediction_date)
 
-            if not open_vals or not close_vals or not jodis:
+                if not open_vals or not close_vals or not jodis:
+                    predictions.append({
+                        "market": market,
+                        "status": "error",
+                        "message": status
+                    })
+                    continue
+
+                open_digits = [str(patti_to_digit(val)) for val in open_vals]
+                close_digits = [str(patti_to_digit(val)) for val in close_vals]
+                pattis = generate_pattis(open_vals, close_vals)
+
+                predictions.append({
+                    "market": market,
+                    "status": "success",
+                    "open": open_digits,
+                    "close": close_digits,
+                    "pattis": pattis,
+                    "jodis": jodis,
+                    "date": prediction_date
+                })
+            except Exception as e:
                 predictions.append({
                     "market": market,
                     "status": "error",
-                    "message": status
+                    "message": f"Prediction failed: {str(e)}"
                 })
-                continue
-
-            open_digits = [str(patti_to_digit(val)) for val in open_vals]
-            close_digits = [str(patti_to_digit(val)) for val in close_vals]
-            pattis = generate_pattis(open_vals, close_vals)
-
-            predictions.append({
-                "market": market,
-                "status": "success",
-                "open": open_digits,
-                "close": close_digits,
-                "pattis": pattis,
-                "jodis": jodis,
-                "date": prediction_date
-            })
 
         return jsonify({
             "success": True,
