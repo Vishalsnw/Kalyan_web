@@ -5,8 +5,13 @@ from datetime import datetime, timedelta
 import os
 
 # --- Configuration ---
-TELEGRAM_BOT_TOKEN = "8050429062:AAHfDWm42MvsfxVMOcOprH6vFxcisZJqOOg"  # ✅ Updated token
-CHAT_ID = "-1002573892631"
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "8050429062:AAGjX5t7poexZWjIEuMijQ1bVOJELqgdlmc")
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "-1002573892631")
 
 CSV_FILE = "satta_data.csv"
 PRED_FILE = "today_ml_prediction.csv"

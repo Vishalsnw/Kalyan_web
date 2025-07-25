@@ -5,6 +5,9 @@ from datetime import datetime, timedelta
 from sklearn.ensemble import RandomForestClassifier
 import warnings
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # === CONFIG ===
 warnings.filterwarnings("ignore")

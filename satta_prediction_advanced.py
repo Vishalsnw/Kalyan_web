@@ -1,15 +1,20 @@
 import pandas as pd
 import numpy as np
-import telegram
+from telegram import Bot
+from telegram.constants import ParseMode
 from datetime import datetime, timedelta
 from sklearn.ensemble import RandomForestClassifier
 import warnings
 import os
 
 # === CONFIG ===
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 warnings.filterwarnings("ignore")
-TELEGRAM_TOKEN = "8050429062:AAHfDWm42MvsfxVMOcOprH6vFxcisZJqOOg"  # ✅ Updated token
-CHAT_ID = "-1002573892631"
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "8050429062:AAGjX5t7poexZWjIEuMijQ1bVOJELqgdlmc")
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "-1002573892631")
 MARKETS = ["Time Bazar", "Milan Day", "Rajdhani Day", "Kalyan", "Milan Night", "Rajdhani Night", "Main Bazar"]
 DATA_FILE = "satta_data.csv"
 PRED_FILE = "today_ml_prediction.csv"
@@ -18,8 +23,8 @@ ACCURACY_FILE = "prediction_accuracy.csv"
 # === TELEGRAM ===
 def send_telegram_message(message):
     try:
-        bot = telegram.Bot(token=TELEGRAM_TOKEN)
-        bot.send_message(chat_id=CHAT_ID, text=message, parse_mode=telegram.ParseMode.HTML)
+        bot = Bot(token=TELEGRAM_TOKEN)
+        bot.send_message(chat_id=CHAT_ID, text=message, parse_mode=ParseMode.HTML)
     except Exception as e:
         print("Telegram Error:", e)
 
