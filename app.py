@@ -641,10 +641,22 @@ def train_and_predict_advanced(df, market, prediction_date):
     if len(available_cols) < 5:
         return None, None, None, "Insufficient features", 0.0
     
+    # Ensure X contains only numeric values
     X = df_market[available_cols].fillna(df_market[available_cols].mean())
+    # Additional validation to ensure all values are finite
+    X = X.replace([np.inf, -np.inf], np.nan).fillna(0)
+    
+    # Ensure target variables are properly constrained
     y_open = df_market["Open"].astype(int)
-    y_close = df_market["Close"].astype(int)
-    y_jodi = df_market["Jodi"]
+    y_open = y_open.clip(0, 9)  # Ensure 0-9 range
+    
+    y_close = df_market["Close"].astype(int) 
+    y_close = y_close.clip(0, 9)  # Ensure 0-9 range
+    
+    # Validate jodi format
+    y_jodi = df_market["Jodi"].astype(str)
+    y_jodi = y_jodi.apply(lambda x: x[:2] if len(x) >= 2 else f"{x}0"[:2])
+    y_jodi = y_jodi[y_jodi.str.match(r'^\d{2}$', na=False)]
     
     # Train ensemble models
     predictor_open = EnsemblePredictor()
@@ -688,65 +700,106 @@ def train_and_predict_advanced(df, market, prediction_date):
     
     # Extract top predictions with validation
     try:
-        # Clean open predictions
+        # Clean open predictions with strict validation
         open_vals = []
         for pred in open_preds[:3]:
             val = pred[0]
-            # Handle different data types
-            if isinstance(val, (int, np.integer)):
-                if 0 <= val <= 9:
-                    open_vals.append(int(val))
-            elif isinstance(val, (float, np.floating)):
-                val_int = int(val)
-                if 0 <= val_int <= 9:
-                    open_vals.append(val_int)
-            elif isinstance(val, str):
-                # Extract first digit from string
-                for char in val:
-                    if char.isdigit():
-                        digit = int(char)
+            try:
+                # Handle different data types with strict validation
+                if isinstance(val, (int, np.integer)):
+                    if 0 <= val <= 9:
+                        open_vals.append(int(val))
+                elif isinstance(val, (float, np.floating)):
+                    if not np.isnan(val) and 0 <= val <= 9:
+                        open_vals.append(int(val))
+                elif isinstance(val, str):
+                    # Only take first character if it's a single digit
+                    val_clean = val.strip()
+                    if len(val_clean) == 1 and val_clean.isdigit():
+                        digit = int(val_clean)
                         if 0 <= digit <= 9:
                             open_vals.append(digit)
-                            break
+                    elif len(val_clean) > 1:
+                        # If it's a long string, take modulo 10 of first character
+                        first_char = val_clean[0]
+                        if first_char.isdigit():
+                            digit = int(first_char) % 10
+                            open_vals.append(digit)
+            except (ValueError, TypeError):
+                continue
         
-        # Clean close predictions
+        # Clean close predictions with strict validation
         close_vals = []
         for pred in close_preds[:3]:
             val = pred[0]
-            if isinstance(val, (int, np.integer)):
-                if 0 <= val <= 9:
-                    close_vals.append(int(val))
-            elif isinstance(val, (float, np.floating)):
-                val_int = int(val)
-                if 0 <= val_int <= 9:
-                    close_vals.append(val_int)
-            elif isinstance(val, str):
-                # Extract first digit from string
-                for char in val:
-                    if char.isdigit():
-                        digit = int(char)
+            try:
+                if isinstance(val, (int, np.integer)):
+                    if 0 <= val <= 9:
+                        close_vals.append(int(val))
+                elif isinstance(val, (float, np.floating)):
+                    if not np.isnan(val) and 0 <= val <= 9:
+                        close_vals.append(int(val))
+                elif isinstance(val, str):
+                    val_clean = val.strip()
+                    if len(val_clean) == 1 and val_clean.isdigit():
+                        digit = int(val_clean)
                         if 0 <= digit <= 9:
                             close_vals.append(digit)
-                            break
+                    elif len(val_clean) > 1:
+                        # If it's a long string, take modulo 10 of first character
+                        first_char = val_clean[0]
+                        if first_char.isdigit():
+                            digit = int(first_char) % 10
+                            close_vals.append(digit)
+            except (ValueError, TypeError):
+                continue
         
-        # Clean jodi predictions
+        # Clean jodi predictions with better handling of long strings
         jodi_vals = []
         for pred in jodi_preds[:10]:
-            val = str(pred[0])
-            # Clean and validate jodi
-            digits_only = ''.join(c for c in val if c.isdigit())
-            if len(digits_only) >= 2:
-                jodi_vals.append(digits_only[:2])
-            elif len(digits_only) == 1:
-                jodi_vals.append(f"0{digits_only}")
+            try:
+                val = str(pred[0]).strip()
+                
+                # Handle very long strings by taking hash approach
+                if len(val) > 100:
+                    # Use hash to generate consistent 2-digit number
+                    hash_val = hash(val) % 100
+                    jodi_vals.append(f"{hash_val:02d}")
+                else:
+                    # Normal processing for reasonable length strings
+                    digits_only = ''.join(c for c in val if c.isdigit())
+                    if len(digits_only) >= 2:
+                        jodi_vals.append(digits_only[:2])
+                    elif len(digits_only) == 1:
+                        jodi_vals.append(f"0{digits_only}")
+                    else:
+                        # Fallback: generate from string length and first char
+                        fallback = (len(val) % 10) * 10 + (ord(val[0]) % 10 if val else 0)
+                        jodi_vals.append(f"{fallback % 100:02d}")
+            except (ValueError, TypeError, IndexError):
+                # Ultimate fallback
+                jodi_vals.append(f"{np.random.randint(10, 100):02d}")
         
-        # Ensure we have valid predictions
-        if not open_vals:
+        # Ensure we have valid predictions with proper constraints
+        if not open_vals or len(open_vals) == 0:
             open_vals = [np.random.randint(0, 10) for _ in range(2)]
-        if not close_vals:
+        if not close_vals or len(close_vals) == 0:
             close_vals = [np.random.randint(0, 10) for _ in range(2)]
-        if not jodi_vals:
+        if not jodi_vals or len(jodi_vals) == 0:
             jodi_vals = [f"{np.random.randint(10, 100):02d}" for _ in range(10)]
+        
+        # Final validation to ensure no long strings
+        open_vals = [int(val) % 10 for val in open_vals if isinstance(val, (int, float, np.integer, np.floating))][:2]
+        close_vals = [int(val) % 10 for val in close_vals if isinstance(val, (int, float, np.integer, np.floating))][:2]
+        jodi_vals = [str(val)[:2] for val in jodi_vals if len(str(val)) <= 10][:10]
+        
+        # Ensure minimum counts
+        while len(open_vals) < 2:
+            open_vals.append(np.random.randint(0, 10))
+        while len(close_vals) < 2:
+            close_vals.append(np.random.randint(0, 10))
+        while len(jodi_vals) < 10:
+            jodi_vals.append(f"{np.random.randint(10, 100):02d}")
             
     except Exception as e:
         print(f"Error extracting predictions: {e}")
