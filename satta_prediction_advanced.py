@@ -1,7 +1,5 @@
 import pandas as pd
 import numpy as np
-from telegram import Bot
-from telegram.constants import ParseMode
 from datetime import datetime, timedelta
 from sklearn.ensemble import RandomForestClassifier
 import warnings
@@ -13,20 +11,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 warnings.filterwarnings("ignore")
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "8050429062:AAGjX5t7poexZWjIEuMijQ1bVOJELqgdlmc")
-CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "-1002573892631")
 MARKETS = ["Time Bazar", "Milan Day", "Rajdhani Day", "Kalyan", "Milan Night", "Rajdhani Night", "Main Bazar"]
 DATA_FILE = "satta_data.csv"
 PRED_FILE = "today_ml_prediction.csv"
 ACCURACY_FILE = "prediction_accuracy.csv"
 
-# === TELEGRAM ===
-def send_telegram_message(message):
+# === LOGGING ===
+def log_predictions(message):
     try:
-        bot = Bot(token=TELEGRAM_TOKEN)
-        bot.send_message(chat_id=CHAT_ID, text=message, parse_mode=ParseMode.HTML)
+        print("PREDICTION LOG:", message)
+        # Optionally save to file
+        with open("prediction_log.txt", "a", encoding="utf-8") as f:
+            f.write(f"{datetime.now()}: {message}\n")
     except Exception as e:
-        print("Telegram Error:", e)
+        print("Logging Error:", e)
 
 # === UTILS ===
 def patti_to_digit(patti):
@@ -186,8 +184,8 @@ def main():
     df_combined.to_csv(PRED_FILE, index=False)
     df_acc.to_csv(ACCURACY_FILE, index=False)
 
-    # Send to Telegram
-    send_telegram_message(full_msg)
+    # Log predictions
+    log_predictions(full_msg)
 
 if __name__ == "__main__":
     main()

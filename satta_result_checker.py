@@ -10,9 +10,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "8050429062:AAGjX5t7poexZWjIEuMijQ1bVOJELqgdlmc")
-CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "-1002573892631")
-
 CSV_FILE = "satta_data.csv"
 PRED_FILE = "today_ml_prediction.csv"
 SENT_MSG_FILE = "sent_messages.csv"
@@ -28,14 +25,14 @@ MARKETS = {
     "Main Bazar": "https://dpbossattamatka.com/panel-chart-record/main-bazar.php"
 }
 
-def send_telegram_message(msg):
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown"}
+def log_results(msg):
     try:
-        r = requests.post(url, data=payload)
-        print("Telegram response:", r.status_code, r.text)
+        print("RESULT LOG:", msg)
+        # Save to file
+        with open("result_log.txt", "a", encoding="utf-8") as f:
+            f.write(f"{datetime.now()}: {msg}\n")
     except Exception as e:
-        print("Telegram exception:", e)
+        print("Logging exception:", e)
 
 def parse_cell(cell):
     parts = cell.decode_contents().split('<br>')
@@ -183,13 +180,13 @@ for _, row in today_actuals.iterrows():
 
     sent_log = pd.concat([sent_log, pd.DataFrame([{"Date": today, "Market": market}])], ignore_index=True)
 
-# --- Send Messages ---
+# --- Log Results ---
 if matched_msgs:
-    send_telegram_message("*🌟 Prediction Match Found*\n" + "\n".join(matched_msgs))
+    log_results("🌟 Prediction Match Found\n" + "\n".join(matched_msgs))
 elif unmatched_msgs:
-    send_telegram_message("*📊 Today's Results (No Match)*\n" + "\n".join(unmatched_msgs))
+    log_results("📊 Today's Results (No Match)\n" + "\n".join(unmatched_msgs))
 else:
-    print("Nothing new to send.")
+    print("Nothing new to log.")
 
 # --- Save Sent Log ---
 sent_log.to_csv(SENT_MSG_FILE, index=False)
