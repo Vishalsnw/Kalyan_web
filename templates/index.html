@@ -664,12 +664,8 @@
             showLoading(true);
             hideAllSections();
 
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-            fetch('/api/predictions', { signal: controller.signal })
+            fetch('/api/predictions')
                 .then(response => {
-                    clearTimeout(timeoutId);
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
@@ -686,63 +682,75 @@
                             showMessage('🎯 Fresh predictions generated successfully!', 'success');
                         }
                     } else {
-                        showMessage(`❌ Error: ${data.error}`, 'error');
+                        showMessage(`❌ Error: ${data.error || 'Unknown error'}`, 'error');
                     }
                 })
                 .catch(error => {
-                    clearTimeout(timeoutId);
                     showLoading(false);
-                    if (error.name === 'AbortError') {
-                        showMessage('⏰ Request timed out. Please try again.', 'error');
-                    } else {
-                        showMessage(`🌐 Network error: ${error.message}`, 'error');
-                    }
+                    console.error('Prediction load error:', error);
+                    showMessage(`🌐 Network error: ${error.message}`, 'error');
                 });
         }
 
         function displayPredictions(data) {
-            document.getElementById('predictionDate').textContent = data.date;
-            const grid = document.getElementById('predictionsGrid');
-            grid.innerHTML = '';
+            try {
+                document.getElementById('predictionDate').textContent = data.date || 'Unknown Date';
+                const grid = document.getElementById('predictionsGrid');
+                grid.innerHTML = '';
 
-            data.predictions.forEach((pred, index) => {
-                const card = document.createElement('div');
-                card.className = 'market-card';
-                card.style.animationDelay = `${index * 0.1}s`;
-
-                if (pred.status === 'error') {
-                    card.innerHTML = `
-                        <div class="market-name">${pred.market}</div>
-                        <div style="color: #f44336; text-align: center; padding: 20px;">
-                            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i><br>
-                            ${pred.message}
-                        </div>
-                    `;
-                } else {
-                    card.innerHTML = `
-                        <div class="market-name">${pred.market}</div>
-                        <div class="prediction-row">
-                            <span class="prediction-label"><i class="fas fa-door-open"></i> Open:</span>
-                            <span class="prediction-value">${pred.open.join(', ')}</span>
-                        </div>
-                        <div class="prediction-row">
-                            <span class="prediction-label"><i class="fas fa-door-closed"></i> Close:</span>
-                            <span class="prediction-value">${pred.close.join(', ')}</span>
-                        </div>
-                        <div class="prediction-row">
-                            <span class="prediction-label"><i class="fas fa-layer-group"></i> Pattis:</span>
-                            <span class="prediction-value">${pred.pattis.join(', ')}</span>
-                        </div>
-                        <div class="prediction-row">
-                            <span class="prediction-label"><i class="fas fa-dice"></i> Top Jodis:</span>
-                            <span class="prediction-value">${pred.jodis.slice(0, 5).join(', ')}</span>
-                        </div>
-                    `;
+                if (!data.predictions || data.predictions.length === 0) {
+                    grid.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 40px; font-size: 1.2rem;"><i class="fas fa-info-circle"></i> No predictions available</div>';
+                    showSection('predictions');
+                    return;
                 }
-                grid.appendChild(card);
-            });
 
-            showSection('predictions');
+                data.predictions.forEach((pred, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'market-card';
+                    card.style.animationDelay = `${index * 0.1}s`;
+
+                    if (pred.status === 'error') {
+                        card.innerHTML = `
+                            <div class="market-name">${pred.market || 'Unknown Market'}</div>
+                            <div style="color: #f44336; text-align: center; padding: 20px;">
+                                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i><br>
+                                ${pred.message || 'Prediction error'}
+                            </div>
+                        `;
+                    } else {
+                        const openVals = Array.isArray(pred.open) ? pred.open : [];
+                        const closeVals = Array.isArray(pred.close) ? pred.close : [];
+                        const pattis = Array.isArray(pred.pattis) ? pred.pattis : [];
+                        const jodis = Array.isArray(pred.jodis) ? pred.jodis : [];
+
+                        card.innerHTML = `
+                            <div class="market-name">${pred.market || 'Unknown Market'}</div>
+                            <div class="prediction-row">
+                                <span class="prediction-label"><i class="fas fa-door-open"></i> Open:</span>
+                                <span class="prediction-value">${openVals.join(', ') || 'N/A'}</span>
+                            </div>
+                            <div class="prediction-row">
+                                <span class="prediction-label"><i class="fas fa-door-closed"></i> Close:</span>
+                                <span class="prediction-value">${closeVals.join(', ') || 'N/A'}</span>
+                            </div>
+                            <div class="prediction-row">
+                                <span class="prediction-label"><i class="fas fa-layer-group"></i> Pattis:</span>
+                                <span class="prediction-value">${pattis.join(', ') || 'N/A'}</span>
+                            </div>
+                            <div class="prediction-row">
+                                <span class="prediction-label"><i class="fas fa-dice"></i> Top Jodis:</span>
+                                <span class="prediction-value">${jodis.slice(0, 5).join(', ') || 'N/A'}</span>
+                            </div>
+                        `;
+                    }
+                    grid.appendChild(card);
+                });
+
+                showSection('predictions');
+            } catch (error) {
+                console.error('Error displaying predictions:', error);
+                showMessage('Error displaying predictions', 'error');
+            }
         }
 
         async function generatePredictions() {
@@ -774,17 +782,24 @@
             hideAllSections();
 
             fetch('/api/today-results')
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     showLoading(false);
                     if (data.success) {
                         displayTodayResults(data);
+                        showMessage('📊 Results loaded successfully!', 'success');
                     } else {
-                        showMessage(`❌ Error: ${data.error}`, 'error');
+                        showMessage(`❌ Error: ${data.error || 'No results available'}`, 'error');
                     }
                 })
                 .catch(error => {
                     showLoading(false);
+                    console.error('Results load error:', error);
                     showMessage(`🌐 Network error: ${error.message}`, 'error');
                 });
         }
@@ -863,17 +878,24 @@
             hideAllSections();
 
             fetch('/api/performance')
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     showLoading(false);
                     if (data.success) {
                         displayPerformance(data.stats);
+                        showMessage('📈 Performance data loaded!', 'success');
                     } else {
-                        showMessage(`❌ Error: ${data.error}`, 'error');
+                        showMessage(`❌ Error: ${data.error || 'Performance data unavailable'}`, 'error');
                     }
                 })
                 .catch(error => {
                     showLoading(false);
+                    console.error('Performance load error:', error);
                     showMessage(`🌐 Network error: ${error.message}`, 'error');
                 });
         }
@@ -923,8 +945,11 @@
 
         // Enhanced page load animation
         document.addEventListener('DOMContentLoaded', function() {
-            // Add entrance animations
-            setTimeout(() => loadPredictions(), 500);
+            // Add entrance animations and auto-load predictions
+            setTimeout(() => {
+                console.log('Auto-loading predictions...');
+                loadPredictions();
+            }, 500);
 
             // Add parallax effect on scroll
             window.addEventListener('scroll', function() {
@@ -933,6 +958,13 @@
                 if (parallax) {
                     parallax.style.transform = `translateY(${scrolled * 0.5}px)`;
                 }
+            });
+
+            // Add global error handler
+            window.addEventListener('unhandledrejection', function(event) {
+                console.error('Unhandled promise rejection:', event.reason);
+                showMessage('Application error occurred. Please refresh the page.', 'error');
+                event.preventDefault();
             });
         });
 
