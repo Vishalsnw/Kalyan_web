@@ -3,6 +3,19 @@ run = "npm run dev"
 
 [nix]
 channel = "stable-25_05"
+packages = ["glibcLocales"]
 
 [deployment]
 run = ["sh", "-c", "npm run dev"]
+
+[workflows]
+runButton = "Run Web App"
+
+[[workflows.workflow]]
+name = "Run Web App"
+author = 45524270
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python app.py"
