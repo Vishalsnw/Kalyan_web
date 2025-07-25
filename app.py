@@ -165,15 +165,62 @@ def get_today_results():
         today = datetime.now().strftime("%d/%m/%Y")
         today_results = df[df['Date'] == today]
         
+        # Load today's predictions
+        try:
+            pred_df = pd.read_csv(PRED_FILE)
+            pred_df['Date'] = pd.to_datetime(pred_df['Date'], dayfirst=True, errors='coerce')
+            today_dt = pd.to_datetime(today, dayfirst=True)
+            pred_df = pred_df[pred_df['Date'] == today_dt]
+            pred_df['Date'] = pred_df['Date'].dt.strftime("%d/%m/%Y")
+        except FileNotFoundError:
+            pred_df = pd.DataFrame()
+        
         results = []
         for _, row in today_results.iterrows():
+            market = row["Market"]
+            actual_open = str(row["Open"])
+            actual_close = str(row["Close"])
+            actual_jodi = str(row["Jodi"])
+            
+            # Find prediction for this market
+            pred_row = pred_df[pred_df["Market"] == market]
+            prediction_match = {
+                "has_prediction": False,
+                "open_match": False,
+                "close_match": False,
+                "jodi_match": False,
+                "predicted_open": [],
+                "predicted_close": [],
+                "predicted_jodis": []
+            }
+            
+            if not pred_row.empty:
+                pred = pred_row.iloc[0]
+                prediction_match["has_prediction"] = True
+                
+                # Parse predictions
+                pred_open = [x.strip() for x in str(pred.get("Open", "")).split(",") if x.strip()]
+                pred_close = [x.strip() for x in str(pred.get("Close", "")).split(",") if x.strip()]
+                pred_jodis = [x.strip() for x in str(pred.get("Jodis", "")).split(",") if x.strip()]
+                
+                prediction_match["predicted_open"] = pred_open
+                prediction_match["predicted_close"] = pred_close
+                prediction_match["predicted_jodis"] = pred_jodis
+                
+                # Check matches
+                if actual_jodi and len(actual_jodi) >= 2:
+                    prediction_match["open_match"] = actual_jodi[0] in pred_open
+                    prediction_match["close_match"] = actual_jodi[1] in pred_close
+                prediction_match["jodi_match"] = actual_jodi in pred_jodis
+            
             results.append({
-                "market": row["Market"],
+                "market": market,
                 "date": row["Date"],
-                "open": str(row["Open"]),
-                "close": str(row["Close"]),
-                "jodi": str(row["Jodi"]),
-                "status": "declared"
+                "open": actual_open,
+                "close": actual_close,
+                "jodi": actual_jodi,
+                "status": "declared",
+                "prediction_match": prediction_match
             })
         
         # If no results for today, check if it's a valid trading day

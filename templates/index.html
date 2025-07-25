@@ -222,23 +222,112 @@
         }
 
         .no-results {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 40px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 2px dashed #dee2e6;
-        }
+                text-align: center;
+                padding: 40px;
+                color: #666;
+            }
 
-        .no-results h3 {
-            color: #6c757d;
-            margin-bottom: 10px;
-        }
+            .no-results-icon {
+                font-size: 3rem;
+                margin-bottom: 15px;
+            }
 
-        .no-results p {
-            color: #6c757d;
-            margin: 0;
-        }
+            .no-results-text {
+                font-size: 1.2rem;
+                color: #888;
+            }
+
+            .prediction-comparison {
+                margin-top: 15px;
+                padding: 15px;
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                border-radius: 8px;
+                border-left: 4px solid #007bff;
+            }
+
+            .comparison-title {
+                font-weight: bold;
+                color: #495057;
+                margin-bottom: 10px;
+                text-align: center;
+            }
+
+            .comparison-row {
+                display: flex;
+                align-items: center;
+                margin-bottom: 8px;
+                font-size: 0.9rem;
+            }
+
+            .comparison-label {
+                min-width: 50px;
+                font-weight: bold;
+                color: #495057;
+            }
+
+            .comparison-pred {
+                color: #007bff;
+                font-family: 'Courier New', monospace;
+                margin-right: 8px;
+            }
+
+            .comparison-vs {
+                color: #6c757d;
+                margin: 0 8px;
+                font-style: italic;
+            }
+
+            .comparison-actual {
+                color: #28a745;
+                font-weight: bold;
+                font-family: 'Courier New', monospace;
+                margin-right: 8px;
+            }
+
+            .match-indicator {
+                font-size: 1.1rem;
+            }
+
+            .match-success {
+                color: #28a745;
+            }
+
+            .match-fail {
+                color: #dc3545;
+            }
+
+            .overall-match {
+                text-align: center;
+                padding: 8px;
+                border-radius: 5px;
+                font-weight: bold;
+                margin-top: 10px;
+            }
+
+            .overall-match.success {
+                background-color: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+            }
+
+            .overall-match.fail {
+                background-color: #f8d7da;
+                color: #721c24;
+                border: 1px solid #f1b2b7;
+            }
+
+            .no-prediction {
+                margin-top: 15px;
+                padding: 15px;
+                background-color: #f8f9fa;
+                border-radius: 8px;
+                text-align: center;
+                color: #6c757d;
+            }
+
+            .no-pred-icon {
+                margin-right: 8px;
+            }
     </style>
 </head>
 <body>
@@ -319,35 +408,79 @@
             if (!data.results || data.results.length === 0) {
                 resultsDiv.innerHTML = `
                     <div class="no-results">
-                        <h3>📅 Today's Results (${data.date})</h3>
-                        <p>${data.message || 'No results available for today'}</p>
+                        <div class="no-results-icon">📅</div>
+                        <div class="no-results-text">${data.message || 'No results available for today'}</div>
                     </div>
                 `;
                 return;
             }
 
-            let html = `<div class="results-header"><h2>📅 Today's Results - ${data.date}</h2></div>`;
+            const html = data.results.map(result => {
+                const match = result.prediction_match;
+                let predictionHTML = '';
 
-            data.results.forEach(result => {
-                html += `
-                    <div class="prediction-card result-card">
-                        <div class="market-header">${result.market}</div>
-                        <div class="prediction-row">
-                            <span class="label">Open:</span>
-                            <span class="values result-value">${result.open}</span>
+                if (match.has_prediction) {
+                    const getMatchIcon = (isMatch) => isMatch ? '✅' : '❌';
+                    const getMatchClass = (isMatch) => isMatch ? 'match-success' : 'match-fail';
+
+                    predictionHTML = `
+                        <div class="prediction-comparison">
+                            <div class="comparison-title">🎯 Prediction vs Result</div>
+                            <div class="comparison-row">
+                                <span class="comparison-label">Open:</span>
+                                <span class="comparison-pred">[${match.predicted_open.join(', ')}]</span>
+                                <span class="comparison-vs">vs</span>
+                                <span class="comparison-actual">${result.jodi ? result.jodi[0] : '?'}</span>
+                                <span class="match-indicator ${getMatchClass(match.open_match)}">${getMatchIcon(match.open_match)}</span>
+                            </div>
+                            <div class="comparison-row">
+                                <span class="comparison-label">Close:</span>
+                                <span class="comparison-pred">[${match.predicted_close.join(', ')}]</span>
+                                <span class="comparison-vs">vs</span>
+                                <span class="comparison-actual">${result.jodi ? result.jodi[1] : '?'}</span>
+                                <span class="match-indicator ${getMatchClass(match.close_match)}">${getMatchIcon(match.close_match)}</span>
+                            </div>
+                            <div class="comparison-row">
+                                <span class="comparison-label">Jodi:</span>
+                                <span class="comparison-pred">[${match.predicted_jodis.slice(0, 5).join(', ')}...]</span>
+                                <span class="comparison-vs">vs</span>
+                                <span class="comparison-actual">${result.jodi}</span>
+                                <span class="match-indicator ${getMatchClass(match.jodi_match)}">${getMatchIcon(match.jodi_match)}</span>
+                            </div>
+                            <div class="overall-match ${match.open_match || match.close_match || match.jodi_match ? 'success' : 'fail'}">
+                                ${match.open_match || match.close_match || match.jodi_match ? '🎉 PREDICTION MATCH!' : '😔 No Match'}
+                            </div>
                         </div>
-                        <div class="prediction-row">
-                            <span class="label">Close:</span>
-                            <span class="values result-value">${result.close}</span>
+                    `;
+                } else {
+                    predictionHTML = `
+                        <div class="no-prediction">
+                            <span class="no-pred-icon">📊</span>
+                            <span class="no-pred-text">No prediction available for comparison</span>
                         </div>
-                        <div class="prediction-row">
-                            <span class="label">Jodi:</span>
-                            <span class="values result-value">${result.jodi}</span>
+                    `;
+                }
+
+                return `
+                    <div class="result-card">
+                        <div class="market-name">${result.market}</div>
+                        <div class="result-row">
+                            <span class="result-label">Open:</span>
+                            <span class="result-value">${result.open}</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">Close:</span>
+                            <span class="result-value">${result.close}</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="result-label">Jodi:</span>
+                            <span class="result-value">${result.jodi}</span>
                         </div>
                         <div class="status-badge declared">✅ ${result.status.toUpperCase()}</div>
+                        ${predictionHTML}
                     </div>
                 `;
-            });
+            }).join('');
 
             resultsDiv.innerHTML = html;
         }
