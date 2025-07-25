@@ -570,9 +570,39 @@
 
         <!-- Preferences Section -->
         <div class="section" id="preferences">
-            <h2>User Preferences</h2>
-            <div id="preferencesContent">
-                <p>User preferences panel will be available here...</p>
+            <div class="settings-content">
+                <h3>⚙️ Application Settings</h3>
+                <div class="setting-group">
+                    <label>Favorite Markets:</label>
+                    <div class="checkbox-group" id="favoriteMarkets">
+                        <label><input type="checkbox" value="Time Bazar"> Time Bazar</label>
+                        <label><input type="checkbox" value="Milan Day"> Milan Day</label>
+                        <label><input type="checkbox" value="Rajdhani Day"> Rajdhani Day</label>
+                        <label><input type="checkbox" value="Kalyan"> Kalyan</label>
+                        <label><input type="checkbox" value="Milan Night"> Milan Night</label>
+                        <label><input type="checkbox" value="Rajdhani Night"> Rajdhani Night</label>
+                        <label><input type="checkbox" value="Main Bazar"> Main Bazar</label>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <label>Notification Preferences:</label>
+                    <div class="checkbox-group" id="notificationSettings">
+                        <label><input type="checkbox" value="predictions"> New Predictions</label>
+                        <label><input type="checkbox" value="results"> Results Declared</label>
+                        <label><input type="checkbox" value="high_confidence"> High Confidence Alerts</label>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <label>Auto-refresh Interval:</label>
+                    <select id="refreshInterval">
+                        <option value="30">30 seconds</option>
+                        <option value="60" selected>1 minute</option>
+                        <option value="300">5 minutes</option>
+                        <option value="600">10 minutes</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+                <button class="btn btn-secondary" onclick="loadSettings()">Load Settings</button>
             </div>
         </div>
 
@@ -692,7 +722,7 @@
         }
 
         // Load Analytics
-        
+
 async function loadAnalytics() {
             const content = document.getElementById('analyticsContent');
             content.innerHTML = `
@@ -721,7 +751,7 @@ async function loadAnalytics() {
                 content.innerHTML = `<div class="error">Error loading analytics: ${error.message}</div>`;
             }
         }
-        
+
 
         // Export Data
         async function exportData(type) {
@@ -746,7 +776,7 @@ async function loadAnalytics() {
         }
 
         // Advanced Analytics Functions
-        
+
 async function loadAnalytics() {
             const content = document.getElementById('analyticsContent');
             content.innerHTML = `
@@ -883,8 +913,7 @@ async function loadAnalytics() {
                             scales: {
                                 y: {
                                     beginAtZero: true,
-                                    max: 100
-                                }
+                                    max: 100                                }
                             }
                         }
                     });
@@ -1015,7 +1044,59 @@ async function loadAnalytics() {
             `;
         }
 
-        
+        function loadResults() {
+            const content = document.getElementById('resultsContent');
+            content.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading results data...</p>
+                </div>
+            `;
+
+            fetch('/api/results')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayResults(data);
+                    } else {
+                        content.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                    }
+                })
+                .catch(error => {
+                    content.innerHTML = `<div class="error">Network error: ${error.message}</div>`;
+                });
+        }
+
+        function displayResults(data) {
+            const content = document.getElementById('resultsContent');
+
+            let html = `<h2>Latest Results</h2><div class="prediction-grid">`;
+
+            data.results.forEach(result => {
+                html += `
+                    <div class="prediction-card">
+                        <h3>${result.market}</h3>
+                        <div class="prediction-values">
+                            <div class="prediction-row">
+                                <span>Open:</span>
+                                <span>${result.open}</span>
+                            </div>
+                            <div class="prediction-row">
+                                <span>Close:</span>
+                                <span>${result.close}</span>
+                            </div>
+                            <div class="prediction-row">
+                                <span>Jodi:</span>
+                                <span>${result.jodi}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            content.innerHTML = html;
+        }
 
 function displayAnalytics(performance, heatmap, accuracy, risk) {
             const content = document.getElementById('analyticsContent');
@@ -1135,6 +1216,63 @@ function displayAnalytics(performance, heatmap, accuracy, risk) {
 
             content.innerHTML = html;
         }
+
+        function loadAnalytics() {
+            const content = document.getElementById('analyticsContent');
+            content.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading analytics data...</p>
+                </div>
+            `;
+
+            Promise.all([
+                fetch('/api/analytics/performance').then(r => r.json()),
+                fetch('/api/analytics/heatmap').then(r => r.json()),
+                fetch('/api/analytics/accuracy-trend').then(r => r.json()),
+                fetch('/api/analytics/risk-metrics').then(r => r.json())
+            ]).then(([performance, heatmap, accuracy, risk]) => {
+                displayAnalytics(performance, heatmap, accuracy, risk);
+            }).catch(error => {
+                content.innerHTML = `<div class="error">Error loading analytics: ${error.message}</div>`;
+            });
+        }
+
+        function saveSettings() {
+            const favoriteMarkets = Array.from(
+                document.querySelectorAll('#favoriteMarkets input[type="checkbox"]:checked')
+            ).map(cb => cb.value);
+
+            const notificationSettings = Array.from(
+                document.querySelectorAll('#notificationSettings input[type="checkbox"]:checked')
+            ).map(cb => cb.value);
+
+            const refreshInterval = document.getElementById('refreshInterval').value;
+
+            const settings = {
+                favorite_markets: favoriteMarkets,
+                notification_settings: notificationSettings,
+                refresh_interval: refreshInterval
+            };
+
+            localStorage.setItem('settings', JSON.stringify(settings));
+            alert('Settings saved!');
+        }
+
+        function loadSettings() {
+            const settings = JSON.parse(localStorage.getItem('settings')) || {};
+
+            document.querySelectorAll('#favoriteMarkets input[type="checkbox"]').forEach(cb => {
+                cb.checked = settings.favorite_markets ? settings.favorite_markets.includes(cb.value) : false;
+            });
+
+            document.querySelectorAll('#notificationSettings input[type="checkbox"]').forEach(cb => {
+                cb.checked = settings.notification_settings ? settings.notification_settings.includes(cb.value) : false;
+            });
+
+            document.getElementById('refreshInterval').value = settings.refresh_interval || '60';
+        }
+
         // Auto-refresh predictions every 5 minutes
         setInterval(() => {
             if (document.querySelector('#predictions.active')) {
