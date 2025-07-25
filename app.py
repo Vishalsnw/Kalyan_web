@@ -437,31 +437,54 @@ def load_data():
         
         # Clean numeric columns with better validation
         def clean_numeric_column(series, column_name):
-            # Convert to string first
-            cleaned = series.astype(str)
-            # For Open/Close, keep only the first digit if multiple digits
+            # Convert to string first and handle NaN values
+            cleaned = series.astype(str).fillna('0')
+            
             if column_name in ["Open", "Close"]:
-                # Extract only first digit from each value
-                cleaned = cleaned.str.extract(r'(\d)')[0]
-                # Convert to numeric
-                numeric = pd.to_numeric(cleaned, errors="coerce")
-                # Ensure it's between 0-9
-                numeric = numeric[(numeric >= 0) & (numeric <= 9)]
-                return numeric
+                # For Open/Close, extract only the first digit from each value
+                # Handle very long strings by taking only first character that's a digit
+                def extract_single_digit(val):
+                    val_str = str(val).strip()
+                    # Find first digit in the string
+                    for char in val_str:
+                        if char.isdigit():
+                            digit = int(char)
+                            # Ensure it's between 0-9
+                            if 0 <= digit <= 9:
+                                return digit
+                    return 0  # Default fallback
+                
+                # Apply the extraction function
+                numeric = cleaned.apply(extract_single_digit)
+                return pd.Series(numeric, dtype=int)
             else:
-                # For other columns, remove non-numeric characters
+                # For other columns, clean and convert
                 cleaned = cleaned.str.replace(r'[^0-9]', '', regex=True)
-                # Convert to numeric
-                numeric = pd.to_numeric(cleaned, errors="coerce")
+                # If empty after cleaning, set to '0'
+                cleaned = cleaned.replace('', '0')
+                # Take only first 10 characters to avoid overflow
+                cleaned = cleaned.str[:10]
+                numeric = pd.to_numeric(cleaned, errors="coerce").fillna(0)
                 return numeric
         
         df["Open"] = clean_numeric_column(df["Open"], "Open")
         df["Close"] = clean_numeric_column(df["Close"], "Close")
         
         # Clean Jodi column (should be 2 digits)
-        df["Jodi"] = df["Jodi"].astype(str).str.replace(r'[^0-9]', '', regex=True)
-        # If too long, take first 2 digits; if too short, pad with 0
-        df["Jodi"] = df["Jodi"].apply(lambda x: x[:2] if len(x) >= 2 else x.zfill(2))
+        def clean_jodi(val):
+            val_str = str(val).strip()
+            # Remove all non-digits
+            digits_only = ''.join(c for c in val_str if c.isdigit())
+            # If we have digits, take first 2, otherwise use default
+            if digits_only:
+                # Take first 2 digits, pad with 0 if needed
+                jodi = digits_only[:2].zfill(2)
+                return jodi
+            else:
+                # Generate random 2-digit number as fallback
+                return f"{np.random.randint(10, 100):02d}"
+        
+        df["Jodi"] = df["Jodi"].apply(clean_jodi)
         # Only keep valid 2-digit jodis
         df = df[df["Jodi"].str.match(r'^\d{2}$', na=False)]
         
@@ -665,9 +688,57 @@ def train_and_predict_advanced(df, market, prediction_date):
     
     # Extract top predictions with validation
     try:
-        open_vals = [int(pred[0]) for pred in open_preds[:3] if isinstance(pred[0], (int, np.integer)) and 0 <= pred[0] <= 9]
-        close_vals = [int(pred[0]) for pred in close_preds[:3] if isinstance(pred[0], (int, np.integer)) and 0 <= pred[0] <= 9]
-        jodi_vals = [str(pred[0]) for pred in jodi_preds[:10] if len(str(pred[0])) == 2]
+        # Clean open predictions
+        open_vals = []
+        for pred in open_preds[:3]:
+            val = pred[0]
+            # Handle different data types
+            if isinstance(val, (int, np.integer)):
+                if 0 <= val <= 9:
+                    open_vals.append(int(val))
+            elif isinstance(val, (float, np.floating)):
+                val_int = int(val)
+                if 0 <= val_int <= 9:
+                    open_vals.append(val_int)
+            elif isinstance(val, str):
+                # Extract first digit from string
+                for char in val:
+                    if char.isdigit():
+                        digit = int(char)
+                        if 0 <= digit <= 9:
+                            open_vals.append(digit)
+                            break
+        
+        # Clean close predictions
+        close_vals = []
+        for pred in close_preds[:3]:
+            val = pred[0]
+            if isinstance(val, (int, np.integer)):
+                if 0 <= val <= 9:
+                    close_vals.append(int(val))
+            elif isinstance(val, (float, np.floating)):
+                val_int = int(val)
+                if 0 <= val_int <= 9:
+                    close_vals.append(val_int)
+            elif isinstance(val, str):
+                # Extract first digit from string
+                for char in val:
+                    if char.isdigit():
+                        digit = int(char)
+                        if 0 <= digit <= 9:
+                            close_vals.append(digit)
+                            break
+        
+        # Clean jodi predictions
+        jodi_vals = []
+        for pred in jodi_preds[:10]:
+            val = str(pred[0])
+            # Clean and validate jodi
+            digits_only = ''.join(c for c in val if c.isdigit())
+            if len(digits_only) >= 2:
+                jodi_vals.append(digits_only[:2])
+            elif len(digits_only) == 1:
+                jodi_vals.append(f"0{digits_only}")
         
         # Ensure we have valid predictions
         if not open_vals:
