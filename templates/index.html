@@ -434,35 +434,23 @@
             setTimeout(() => messageDiv.innerHTML = '', 5000);
         }
 
-        function loadTodayResults() {
-            const loadingDiv = document.getElementById('loading');
-            const resultsDiv = document.getElementById('todayResults');
-            const predictionsDiv = document.getElementById('predictions');
+        function showLoading(show) {
+            const loadBtn = document.getElementById('loadBtn');
+            const generateBtn = document.getElementById('generateBtn');
             const todayBtn = document.getElementById('todayBtn');
-
-            loadingDiv.style.display = 'block';
-            resultsDiv.style.display = 'none';
-            predictionsDiv.style.display = 'none';
-            todayBtn.disabled = true;
-
-            fetch('/api/today-results')
-                .then(response => response.json())
-                .then(data => {
-                    loadingDiv.style.display = 'none';
-                    todayBtn.disabled = false;
-
-                    if (data.success) {
-                        displayTodayResults(data);
-                        resultsDiv.style.display = 'grid';
-                    } else {
-                        showMessage('❌ ' + (data.error || 'Failed to load today\'s results'), 'error');
-                    }
-                })
-                .catch(error => {
-                    loadingDiv.style.display = 'none';
-                    todayBtn.disabled = false;
-                    showMessage('❌ Network error: ' + error.message, 'error');
-                });
+            const loadingDiv = document.getElementById('loading');
+            
+            if (show) {
+                loadBtn.disabled = true;
+                generateBtn.disabled = true;
+                todayBtn.disabled = true;
+                loadingDiv.style.display = 'block';
+            } else {
+                loadBtn.disabled = false;
+                generateBtn.disabled = false;
+                todayBtn.disabled = false;
+                loadingDiv.style.display = 'none';
+            }
         }
 
         function displayTodayResults(data) {
@@ -472,46 +460,58 @@
                 resultsDiv.innerHTML = `
                     <div class="no-results">
                         <div class="no-results-icon">📅</div>
-                        <div class="no-results-text">${data.message || 'No results available for today'}</div>
+                        <div class="no-results-text">No results available for today</div>
                     </div>
                 `;
                 return;
             }
 
             const html = data.results.map(result => {
-                const match = result.prediction_match;
+                const matches = result.matches || {};
                 let predictionHTML = '';
 
-                if (match.has_prediction) {
+                if (result.prediction) {
                     const getMatchIcon = (isMatch) => isMatch ? '✅' : '❌';
                     const getMatchClass = (isMatch) => isMatch ? 'match-success' : 'match-fail';
+
+                    const predOpen = result.prediction.Open ? result.prediction.Open.split(',').map(s => s.trim()) : [];
+                    const predClose = result.prediction.Close ? result.prediction.Close.split(',').map(s => s.trim()) : [];
+                    const predJodis = result.prediction.Jodis ? result.prediction.Jodis.split(',').map(s => s.trim()).slice(0, 5) : [];
+                    const predPattis = result.prediction.Pattis ? result.prediction.Pattis.split(',').map(s => s.trim()) : [];
 
                     predictionHTML = `
                         <div class="prediction-comparison">
                             <div class="comparison-title">🎯 Prediction vs Result</div>
                             <div class="comparison-row">
                                 <span class="comparison-label">Open:</span>
-                                <span class="comparison-pred">[${match.predicted_open.join(', ')}]</span>
+                                <span class="comparison-pred">[${predOpen.join(', ')}]</span>
                                 <span class="comparison-vs">vs</span>
-                                <span class="comparison-actual">${result.jodi ? result.jodi[0] : '?'}</span>
-                                <span class="match-indicator ${getMatchClass(match.open_match)}">${getMatchIcon(match.open_match)}</span>
+                                <span class="comparison-actual">${result.actual.open}</span>
+                                <span class="match-indicator ${getMatchClass(matches.open)}">${getMatchIcon(matches.open)}</span>
                             </div>
                             <div class="comparison-row">
                                 <span class="comparison-label">Close:</span>
-                                <span class="comparison-pred">[${match.predicted_close.join(', ')}]</span>
+                                <span class="comparison-pred">[${predClose.join(', ')}]</span>
                                 <span class="comparison-vs">vs</span>
-                                <span class="comparison-actual">${result.jodi ? result.jodi[1] : '?'}</span>
-                                <span class="match-indicator ${getMatchClass(match.close_match)}">${getMatchIcon(match.close_match)}</span>
+                                <span class="comparison-actual">${result.actual.close}</span>
+                                <span class="match-indicator ${getMatchClass(matches.close)}">${getMatchIcon(matches.close)}</span>
                             </div>
                             <div class="comparison-row">
                                 <span class="comparison-label">Jodi:</span>
-                                <span class="comparison-pred">[${match.predicted_jodis.slice(0, 5).join(', ')}...]</span>
+                                <span class="comparison-pred">[${predJodis.join(', ')}...]</span>
                                 <span class="comparison-vs">vs</span>
-                                <span class="comparison-actual">${result.jodi}</span>
-                                <span class="match-indicator ${getMatchClass(match.jodi_match)}">${getMatchIcon(match.jodi_match)}</span>
+                                <span class="comparison-actual">${result.actual.jodi}</span>
+                                <span class="match-indicator ${getMatchClass(matches.jodi)}">${getMatchIcon(matches.jodi)}</span>
                             </div>
-                            <div class="overall-match ${match.open_match || match.close_match || match.jodi_match ? 'success' : 'fail'}">
-                                ${match.open_match || match.close_match || match.jodi_match ? '🎉 PREDICTION MATCH!' : '😔 No Match'}
+                            <div class="comparison-row">
+                                <span class="comparison-label">Patti:</span>
+                                <span class="comparison-pred">[${predPattis.join(', ')}]</span>
+                                <span class="comparison-vs">vs</span>
+                                <span class="comparison-actual">[${result.actual.pattis ? result.actual.pattis.join(', ') : 'N/A'}]</span>
+                                <span class="match-indicator ${getMatchClass(matches.patti)}">${getMatchIcon(matches.patti)}</span>
+                            </div>
+                            <div class="overall-match ${matches.open || matches.close || matches.jodi || matches.patti ? 'success' : 'fail'}">
+                                ${matches.open || matches.close || matches.jodi || matches.patti ? '🎉 PREDICTION MATCH!' : '😔 No Match'}
                             </div>
                         </div>
                     `;
@@ -525,21 +525,21 @@
                 }
 
                 return `
-                    <div class="result-card">
+                    <div class="market-card result-card">
                         <div class="market-name">${result.market}</div>
-                        <div class="result-row">
-                            <span class="result-label">Open:</span>
-                            <span class="result-value">${result.open}</span>
+                        <div class="prediction-row">
+                            <span class="prediction-label">Open:</span>
+                            <span class="result-value">${result.actual.open}</span>
                         </div>
-                        <div class="result-row">
-                            <span class="result-label">Close:</span>
-                            <span class="result-value">${result.close}</span>
+                        <div class="prediction-row">
+                            <span class="prediction-label">Close:</span>
+                            <span class="result-value">${result.actual.close}</span>
                         </div>
-                        <div class="result-row">
-                            <span class="result-label">Jodi:</span>
-                            <span class="result-value">${result.jodi}</span>
+                        <div class="prediction-row">
+                            <span class="prediction-label">Jodi:</span>
+                            <span class="result-value">${result.actual.jodi}</span>
                         </div>
-                        <div class="status-badge declared">✅ ${result.status.toUpperCase()}</div>
+                        <div class="status-badge declared">✅ DECLARED</div>
                         ${predictionHTML}
                     </div>
                 `;
@@ -626,10 +626,9 @@
                     }
                 })
                 .catch(error => {
+                    loadingDiv.style.display = 'none';
+                    loadBtn.disabled = false;
                     showMessage(`❌ Network error: ${error.message}`, 'error');
-                })
-                .finally(() => {
-                    showLoading(false);
                 });
         }
 
@@ -659,21 +658,27 @@
         }
 
         function loadTodayResults() {
+            showLoading(true);
+            document.getElementById('predictions').style.display = 'none';
+            document.getElementById('todayResults').style.display = 'none';
+
             fetch('/api/today-results')
                 .then(response => response.json())
                 .then(data => {
+                    showLoading(false);
                     if (data.success) {
-                        displayTodayResults(data.results, data.date);
+                        displayTodayResults(data);
                         calculateAccuracy(data.results);
+                        document.getElementById('todayResults').style.display = 'grid';
+                        showMessage('✅ Today\'s results loaded successfully!', 'success');
                     } else {
-                        document.getElementById('results-content').innerHTML = 
-                            '<p class="error">Error loading results: ' + (data.error || 'Unknown error') + '</p>';
+                        showMessage('❌ Error loading results: ' + (data.error || 'Unknown error'), 'error');
                     }
                 })
                 .catch(error => {
+                    showLoading(false);
                     console.error('Error:', error);
-                    document.getElementById('results-content').innerHTML = 
-                        '<p class="error">Network error: ' + error.message + '</p>';
+                    showMessage('❌ Network error: ' + error.message, 'error');
                 });
         }
 
