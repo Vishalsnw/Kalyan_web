@@ -691,24 +691,34 @@
 
         // Load Analytics
         async function loadAnalytics() {
-            const content = document.getElementById('analyticsContent');
-            content.innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Loading analytics data...</p>
-                </div>
-            `;
+            try {
+                // Performance data
+                const perfResponse = await fetch('/api/analytics/performance');
+                const perfData = await perfResponse.json();
+                console.log('Performance data:', perfData);
+                if (perfData.success && perfData.markets) {
+                    updatePerformanceCharts(perfData);
+                }
 
-            // Placeholder for analytics functionality
-            setTimeout(() => {
-                content.innerHTML = `
-                    <div class="success">
-                        <h3>Analytics Dashboard</h3>
-                        <p>Advanced analytics features are being loaded...</p>
-                        <p>This will include heatmaps, trend analysis, and performance metrics.</p>
-                    </div>
-                `;
-            }, 2000);
+                // Accuracy trends
+                const trendResponse = await fetch('/api/analytics/accuracy-trend');
+                const trendData = await trendResponse.json();
+                console.log('Trend data:', trendData);
+                if (trendData.success && trendData.trends) {
+                    updateAccuracyTrend(trendData);
+                }
+
+                // Risk metrics
+                const riskResponse = await fetch('/api/analytics/risk-metrics');
+                const riskData = await riskResponse.json();
+                console.log('Risk data:', riskData);
+                if (riskData.success && riskData.metrics) {
+                    updateRiskMetrics(riskData);
+                }
+
+            } catch (error) {
+                console.error('Analytics error:', error);
+            }
         }
 
         // Export Data
@@ -736,7 +746,7 @@
         // Advanced Analytics Functions
         function loadAnalytics() {
             const content = document.getElementById('analyticsContent');
-            
+
             // Load performance chart
             fetch('/api/analytics/performance')
                 .then(response => response.json())
@@ -750,31 +760,43 @@
                 .catch(error => console.error('Analytics error:', error));
         }
 
-        function createPerformanceChart(markets) {
-            const ctx = document.getElementById('performanceChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: markets.map(m => m.name),
-                    datasets: [{
-                        label: 'Accuracy %',
-                        data: markets.map(m => m.accuracy),
-                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
-                        borderColor: 'rgba(102, 126, 234, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100
+        function updatePerformanceCharts(data) {
+                if (!data.success || !data.markets) return;
+
+                const ctx = document.getElementById('performanceChart');
+                if (!ctx) return;
+
+                // Clear existing chart if any
+                if (window.performanceChart) {
+                    window.performanceChart.destroy();
+                }
+
+                window.performanceChart = new Chart(ctx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: data.markets.map(m => m.name),
+                        datasets: [{
+                            label: 'Accuracy %',
+                            data: data.markets.map(m => m.accuracy),
+                            backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100
+                            }
                         }
                     }
-                }
-            });
-        }
+                });
+            }
 
         function loadHeatmap() {
             fetch('/api/analytics/heatmap')
@@ -789,13 +811,13 @@
         function createHeatmap(frequency) {
             const container = document.getElementById('heatmapContainer');
             let html = '<div class="heatmap-grid">';
-            
+
             for (let i = 0; i <= 9; i++) {
                 const freq = frequency[i] || 0;
                 const intensity = Math.min(freq / 10, 1);
                 html += `<div class="heatmap-cell" style="background-color: rgba(102, 126, 234, ${intensity})" title="Number ${i}: ${freq} times">${i}</div>`;
             }
-            
+
             html += '</div>';
             container.innerHTML = html;
         }
@@ -810,31 +832,43 @@
                 });
         }
 
-        function createAccuracyChart(trends) {
-            const ctx = document.getElementById('accuracyChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: trends.map(t => t.date),
-                    datasets: [{
-                        label: 'Daily Accuracy %',
-                        data: trends.map(t => t.accuracy),
-                        borderColor: 'rgba(118, 75, 162, 1)',
-                        backgroundColor: 'rgba(118, 75, 162, 0.1)',
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100
+        function updateAccuracyTrend(data) {
+                if (!data.success || !data.trends) return;
+
+                const ctx = document.getElementById('accuracyChart');
+                if (!ctx) return;
+
+                // Clear existing chart if any
+                if (window.trendChart) {
+                    window.trendChart.destroy();
+                }
+
+                window.trendChart = new Chart(ctx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: data.trends.map(t => t.date),
+                        datasets: [{
+                            label: 'Accuracy Trend',
+                            data: data.trends.map(t => t.accuracy),
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100
+                            }
                         }
                     }
-                }
-            });
-        }
+                });
+            }
 
         function loadRiskMetrics() {
             fetch('/api/analytics/risk-metrics')
@@ -871,6 +905,25 @@
                 </div>
             `;
         }
+
+        function updateRiskMetrics(data) {
+                if (!data.success || !data.metrics) return;
+
+                const metrics = data.metrics;
+                const confidenceEl = document.getElementById('overallConfidence');
+                if (confidenceEl) {
+                    confidenceEl.textContent = `${metrics.confidence}%`;
+                }
+
+                // Update risk distribution
+                const highRiskEl = document.querySelector('.risk-high .risk-value');
+                const mediumRiskEl = document.querySelector('.risk-medium .risk-value');
+                const lowRiskEl = document.querySelector('.risk-low .risk-value');
+
+                if (highRiskEl) highRiskEl.textContent = `${metrics.high_risk}%`;
+                if (mediumRiskEl) mediumRiskEl.textContent = `${metrics.medium_risk}%`;
+                if (lowRiskEl) lowRiskEl.textContent = `${metrics.low_risk}%`;
+            }
 
         // P&L Calculator Functions
         function calculatePL() {
@@ -935,8 +988,7 @@
                     <div class="result-row total">
                         <span>Net Profit/Loss:</span>
                         <span class="${calc.net_pl >= 0 ? 'profit' : 'loss'}">₹${calc.net_pl}</span>
-                    </div>
-                </div>
+                    </div>                </div>
             `;
         }
 
