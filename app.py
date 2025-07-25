@@ -1,8 +1,9 @@
-from flask import Flask, render_template, jsonify
-import pandas as pd
-import numpy as np
 import os
+import json
+import pandas as pd
 from datetime import datetime, timedelta
+from flask import Flask, render_template, jsonify
+import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 import warnings
 from dotenv import load_dotenv
@@ -55,55 +56,55 @@ def load_data():
 # === FEATURE ENGINEERING ===
 def engineer_features(df):
     df = df.sort_values("Date").copy()
-    
+
     # Previous values
     df["Prev_Open"] = df["Open"].shift(1)
     df["Prev_Close"] = df["Close"].shift(1)
     df["Prev_Jodi"] = df["Jodi"].shift(1)
-    
+
     # Rolling averages
     df["Open_MA3"] = df["Open"].rolling(3).mean()
     df["Close_MA3"] = df["Close"].rolling(3).mean()
     df["Open_MA7"] = df["Open"].rolling(7).mean()
     df["Close_MA7"] = df["Close"].rolling(7).mean()
-    
+
     # Volatility features
     df["Open_Std3"] = df["Open"].rolling(3).std()
     df["Close_Std3"] = df["Close"].rolling(3).std()
-    
+
     # Cyclical features
     df["Weekday"] = df["Date"].dt.weekday
     df["Day_of_Month"] = df["Date"].dt.day
     df["Week_of_Year"] = df["Date"].dt.isocalendar().week
-    
+
     # Lag features
     df["Open_Lag2"] = df["Open"].shift(2)
     df["Close_Lag2"] = df["Close"].shift(2)
-    
+
     # Trend features
     df["Open_Trend"] = df["Open"] - df["Open"].shift(1)
     df["Close_Trend"] = df["Close"] - df["Close"].shift(1)
-    
+
     return df.dropna()
 
 # === MODEL TRAINING ===
 def train_model(X, y):
     if len(X) < 10:
         return None
-    
+
     from sklearn.ensemble import GradientBoostingClassifier, VotingClassifier
     from sklearn.svm import SVC
-    
+
     # Ensemble of models
     rf = RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42)
     gb = GradientBoostingClassifier(n_estimators=100, random_state=42)
     svm = SVC(probability=True, random_state=42)
-    
+
     ensemble = VotingClassifier(
         estimators=[('rf', rf), ('gb', gb), ('svm', svm)],
         voting='soft'
     )
-    
+
     try:
         ensemble.fit(X, y)
         return ensemble
@@ -123,7 +124,7 @@ def train_and_predict(df, market, prediction_date):
         return None, None, None, "Feature error"
 
     last_row = df_market.iloc[-1]
-    
+
     # Select all available features
     feature_cols = [
         "Prev_Open", "Prev_Close", "Prev_Jodi", "Open_MA3", "Close_MA3",
@@ -131,11 +132,11 @@ def train_and_predict(df, market, prediction_date):
         "Day_of_Month", "Week_of_Year", "Open_Lag2", "Close_Lag2",
         "Open_Trend", "Close_Trend"
     ]
-    
+
     # Use only available columns
     available_cols = [col for col in feature_cols if col in df_market.columns]
     X = df_market[available_cols]
-    
+
     y_open = df_market["Open"].astype(int)
     y_close = df_market["Close"].astype(int)
     y_jodi = df_market["Jodi"]
@@ -156,12 +157,12 @@ def train_and_predict(df, market, prediction_date):
         "Day_of_Month": pred_date.day,
         "Week_of_Year": pred_date.isocalendar().week
     }
-    
+
     # Add other features if available
     for col in available_cols:
         if col not in X_pred_dict and col in last_row:
             X_pred_dict[col] = last_row[col]
-    
+
     X_pred = pd.DataFrame([{k: v for k, v in X_pred_dict.items() if k in available_cols}])
 
     open_probs = model_open.predict_proba(X_pred)[0]
@@ -176,20 +177,20 @@ def train_and_predict(df, market, prediction_date):
     open_vals = [open_classes[i] for i in np.argsort(open_probs)[-3:][::-1]]
     close_vals = [close_classes[i] for i in np.argsort(close_probs)[-3:][::-1]]
     jodi_vals = [jodi_classes[i] for i in np.argsort(jodi_probs)[-15:][::-1]]
-    
+
     # Pattern analysis - add frequently occurring numbers
     recent_data = df_market.tail(20)
     open_freq = recent_data["Open"].value_counts().head(3).index.tolist()
     close_freq = recent_data["Close"].value_counts().head(3).index.tolist()
-    
+
     # Combine ML predictions with pattern analysis
     open_combined = list(dict.fromkeys(open_vals + open_freq))[:3]
     close_combined = list(dict.fromkeys(close_vals + close_freq))[:3]
-    
+
     # Add hot and cold number analysis
     hot_numbers = get_hot_numbers(df_market)
     cold_numbers = get_cold_numbers(df_market)
-    
+
     # Final selection with balanced approach
     final_open = select_balanced_numbers(open_combined, hot_numbers, cold_numbers)[:2]
     final_close = select_balanced_numbers(close_combined, hot_numbers, cold_numbers)[:2]
@@ -216,13 +217,13 @@ def select_balanced_numbers(predictions, hot_nums, cold_nums):
     for pred in predictions:
         if len(result) < 2:
             result.append(pred)
-    
+
     # Add one hot number if space available
     for hot in hot_nums:
         if hot not in result and len(result) < 3:
             result.append(hot)
             break
-    
+
     return result
 
 # === ROUTES ===
@@ -247,7 +248,7 @@ def get_predictions():
                 existing_preds = pd.read_csv(PRED_FILE)
                 existing_preds['Date'] = pd.to_datetime(existing_preds['Date'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
                 today_preds = existing_preds[existing_preds['Date'] == prediction_date]
-                
+
                 if len(today_preds) > 0:
                     # Return existing predictions
                     predictions = []
@@ -261,7 +262,7 @@ def get_predictions():
                             "jodis": row['Jodis'].split(', '),
                             "date": prediction_date
                         })
-                    
+
                     return jsonify({
                         "success": True,
                         "date": prediction_date,
@@ -270,7 +271,7 @@ def get_predictions():
                     })
             except Exception as e:
                 print(f"Error loading cached predictions: {e}")
-            
+
         df = load_data()
         predictions = []
 
@@ -405,16 +406,26 @@ def get_today_results():
 @app.route('/api/performance')
 def get_performance_stats():
     try:
+        # Try to load from cache first
+        cache_file = "cache/performance.json"
+        if os.path.exists(cache_file):
+            try:
+                with open(cache_file, 'r') as f:
+                    cache_data = json.load(f)
+                return jsonify(cache_data)
+            except Exception as e:
+                print(f"Cache load failed: {e}")
+
         # Calculate detailed performance metrics
         df = load_data()
         today = datetime.now().strftime("%d/%m/%Y")
-        
+
         # Load prediction history
         try:
             pred_df = pd.read_csv(PRED_FILE)
         except:
             pred_df = pd.DataFrame()
-        
+
         stats = {
             'total_predictions': len(pred_df),
             'markets_covered': len(MARKETS),
@@ -422,7 +433,7 @@ def get_performance_stats():
             'best_performing_market': get_best_market(df, pred_df),
             'prediction_confidence': calculate_confidence_scores()
         }
-        
+
         return jsonify({
             "success": True,
             "stats": stats
@@ -437,14 +448,14 @@ def calculate_accuracy_trend(actual_df, pred_df):
     """Calculate accuracy trend over time"""
     recent_dates = []
     accuracies = []
-    
+
     for i in range(7, 0, -1):
         date = (datetime.now() - timedelta(days=i)).strftime("%d/%m/%Y")
         day_accuracy = calculate_day_accuracy(actual_df, pred_df, date)
         if day_accuracy is not None:
             recent_dates.append(date)
             accuracies.append(day_accuracy)
-    
+
     return {'dates': recent_dates, 'accuracies': accuracies}
 
 def calculate_day_accuracy(actual_df, pred_df, date):
@@ -454,53 +465,53 @@ def calculate_day_accuracy(actual_df, pred_df, date):
     pred_df_copy = pred_df.copy()
     actual_df_copy['Date'] = pd.to_datetime(actual_df_copy['Date'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
     pred_df_copy['Date'] = pd.to_datetime(pred_df_copy['Date'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
-    
+
     actual_day = actual_df_copy[actual_df_copy['Date'] == date]
     pred_day = pred_df_copy[pred_df_copy['Date'] == date]
-    
+
     if actual_day.empty or pred_day.empty:
         return None
-    
+
     matches = 0
     total = 0
-    
+
     for _, actual in actual_day.iterrows():
         market = actual['Market']
         pred = pred_day[pred_day['Market'] == market]
-        
+
         if not pred.empty:
             total += 1
             # Check if any prediction matched
             pred_row = pred.iloc[0]
             if check_any_match(actual, pred_row):
                 matches += 1
-    
+
     return (matches / total * 100) if total > 0 else None
 
 def check_any_match(actual, prediction):
     """Check if any part of prediction matched actual result"""
     pred_open = [x.strip() for x in str(prediction.get('Open', '')).split(',')]
     pred_close = [x.strip() for x in str(prediction.get('Close', '')).split(',')]
-    
+
     actual_jodi = str(actual['Jodi']).zfill(2)
     return actual_jodi[0] in pred_open or actual_jodi[1] in pred_close
 
 def get_best_market(actual_df, pred_df):
     """Find the market with highest accuracy"""
     market_scores = {}
-    
+
     for market in MARKETS:
         market_actual = actual_df[actual_df['Market'] == market].tail(30)
         market_pred = pred_df[pred_df['Market'] == market].tail(30)
-        
+
         if not market_actual.empty and not market_pred.empty:
             accuracy = calculate_market_accuracy(market_actual, market_pred)
             market_scores[market] = accuracy
-    
+
     if market_scores:
         best_market = max(market_scores, key=market_scores.get)
         return {'market': best_market, 'accuracy': market_scores[best_market]}
-    
+
     return {'market': 'N/A', 'accuracy': 0}
 
 def calculate_market_accuracy(actual, pred):
@@ -511,13 +522,13 @@ def calculate_market_accuracy(actual, pred):
     pred_copy = pred.copy()
     actual_copy['Date'] = pd.to_datetime(actual_copy['Date'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
     pred_copy['Date'] = pd.to_datetime(pred_copy['Date'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
-    
+
     for _, actual_row in actual_copy.iterrows():
         date = actual_row['Date']
         pred_row = pred_copy[pred_copy['Date'] == date]
         if not pred_row.empty and check_any_match(actual_row, pred_row.iloc[0]):
             matches += 1
-    
+
     return (matches / len(actual_copy) * 100) if len(actual_copy) > 0 else 0
 
 def calculate_confidence_scores():

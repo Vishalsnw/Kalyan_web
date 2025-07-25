@@ -25,7 +25,12 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run prediction script
-        run: python satta_prediction_advanced.py
+        run: |
+          python satta_prediction_advanced.py
+
+      - name: Update cache files
+        run: |
+          python update_cache.py
 
       - name: Ensure accuracy_log.csv exists
         run: |
