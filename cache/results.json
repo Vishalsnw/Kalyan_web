@@ -1,0 +1,138 @@
+{
+  "success": true,
+  "results": [
+    {
+      "market": "Time Bazar",
+      "actual": {
+        "open": "467",
+        "close": "338",
+        "jodi": "74"
+      },
+      "prediction": {
+        "Market": "Time Bazar",
+        "Date": "25/07/2025",
+        "Open": "2, 2",
+        "Close": "0, 5",
+        "Pattis": "011, 156, 249, 677",
+        "Jodis": "20, 25, 79, 19, 57, 12, 51, 09, 11, 29"
+      },
+      "matches": {
+        "open": false,
+        "close": false,
+        "jodi": false
+      }
+    },
+    {
+      "market": "Milan Day",
+      "actual": {
+        "open": "589",
+        "close": "390",
+        "jodi": "22"
+      },
+      "prediction": {
+        "Market": "Milan Day",
+        "Date": "25/07/2025",
+        "Open": "8, 9",
+        "Close": "7, 8",
+        "Pattis": "045, 467, 567",
+        "Jodis": "87, 08, 98, 99, 49, 45, 17, 20, 01, 92"
+      },
+      "matches": {
+        "open": false,
+        "close": false,
+        "jodi": false
+      }
+    },
+    {
+      "market": "Rajdhani Day",
+      "actual": {
+        "open": "256",
+        "close": "469",
+        "jodi": "39"
+      },
+      "prediction": {
+        "Market": "Rajdhani Day",
+        "Date": "25/07/2025",
+        "Open": "9, 5",
+        "Close": "6, 1",
+        "Pattis": "038, 168, 349, 559",
+        "Jodis": "96, 99, 51, 26, 67, 16, 14, 34, 09, 33"
+      },
+      "matches": {
+        "open": false,
+        "close": false,
+        "jodi": false
+      }
+    },
+    {
+      "market": "Main Bazar",
+      "actual": {
+        "open": "368",
+        "close": "170",
+        "jodi": "78"
+      },
+      "prediction": {
+        "Market": "Main Bazar",
+        "Date": "25/07/2025",
+        "Open": "8, 6",
+        "Close": "9, 1",
+        "Pattis": "224, 349, 399, 559",
+        "Jodis": "69, 81, 64, 02, 14, 96, 09, 28, 61, 59"
+      },
+      "matches": {
+        "open": false,
+        "close": false,
+        "jodi": false
+      }
+    },
+    {
+      "market": "Kalyan",
+      "actual": {
+        "open": "378",
+        "close": "345",
+        "jodi": "82"
+      },
+      "prediction": {
+        "Market": "Kalyan",
+        "Date": "25/07/2025",
+        "Open": "7, 7",
+        "Close": "4, 3",
+        "Pattis": "013, 359, 368, 689",
+        "Jodis": "74, 73, 70, 81, 89, 23, 67, 19, 87, 36"
+      },
+      "matches": {
+        "open": false,
+        "close": false,
+        "jodi": false
+      }
+    },
+    {
+      "market": "Milan Night",
+      "actual": {
+        "open": "348",
+        "close": "480",
+        "jodi": "52"
+      },
+      "prediction": {
+        "Market": "Milan Night",
+        "Date": "25/07/2025",
+        "Open": "1, 8",
+        "Close": "5, 8",
+        "Pattis": "137, 279, 378, 889",
+        "Jodis": "15, 88, 10, 14, 05, 46, 94, 90, 79, 40"
+      },
+      "matches": {
+        "open": false,
+        "close": false,
+        "jodi": false
+      }
+    }
+  ],
+  "accuracy": {
+    "total": 6,
+    "open_correct": 0,
+    "close_correct": 0,
+    "jodi_correct": 0
+  },
+  "last_updated": "2025-07-25T18:54:02.630276"
+}

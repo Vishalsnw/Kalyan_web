@@ -1,0 +1,10 @@
+{
+  "success": true,
+  "stats": {
+    "total_predictions": 378,
+    "markets_covered": 7,
+    "avg_accuracy": 85.2,
+    "success_rate": 92.5,
+    "last_updated": "2025-07-25T18:54:02.635686"
+  }
+}
