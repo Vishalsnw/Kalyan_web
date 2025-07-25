@@ -693,27 +693,45 @@
         async function loadAnalytics() {
             try {
                 // Performance data
-                const perfResponse = await fetch('/api/analytics/performance');
-                const perfData = await perfResponse.json();
-                console.log('Performance data:', perfData);
-                if (perfData.success && perfData.markets) {
-                    updatePerformanceCharts(perfData);
+                try {
+                    const perfResponse = await fetch('/api/analytics/performance');
+                    if (perfResponse.ok) {
+                        const perfData = await perfResponse.json();
+                        console.log('Performance data:', perfData);
+                        if (perfData && perfData.success && perfData.markets) {
+                            updatePerformanceCharts(perfData);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Performance analytics error:', error);
                 }
 
                 // Accuracy trends
-                const trendResponse = await fetch('/api/analytics/accuracy-trend');
-                const trendData = await trendResponse.json();
-                console.log('Trend data:', trendData);
-                if (trendData.success && trendData.trends) {
-                    updateAccuracyTrend(trendData);
+                try {
+                    const trendResponse = await fetch('/api/analytics/accuracy-trend');
+                    if (trendResponse.ok) {
+                        const trendData = await trendResponse.json();
+                        console.log('Trend data:', trendData);
+                        if (trendData && trendData.success && trendData.trends) {
+                            updateAccuracyTrend(trendData);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Trend analytics error:', error);
                 }
 
                 // Risk metrics
-                const riskResponse = await fetch('/api/analytics/risk-metrics');
-                const riskData = await riskResponse.json();
-                console.log('Risk data:', riskData);
-                if (riskData.success && riskData.metrics) {
-                    updateRiskMetrics(riskData);
+                try {
+                    const riskResponse = await fetch('/api/analytics/risk-metrics');
+                    if (riskResponse.ok) {
+                        const riskData = await riskResponse.json();
+                        console.log('Risk data:', riskData);
+                        if (riskData && riskData.success && riskData.metrics) {
+                            updateRiskMetrics(riskData);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Risk analytics error:', error);
                 }
 
             } catch (error) {
@@ -761,41 +779,45 @@
         }
 
         function updatePerformanceCharts(data) {
-                if (!data.success || !data.markets) return;
+                try {
+                    if (!data || !data.success || !data.markets || !Array.isArray(data.markets)) return;
 
-                const ctx = document.getElementById('performanceChart');
-                if (!ctx) return;
+                    const ctx = document.getElementById('performanceChart');
+                    if (!ctx) return;
 
-                // Clear existing chart if any
-                if (window.performanceChart) {
-                    window.performanceChart.destroy();
-                }
+                    // Clear existing chart if any
+                    if (window.performanceChart) {
+                        window.performanceChart.destroy();
+                    }
 
-                window.performanceChart = new Chart(ctx.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: data.markets.map(m => m.name),
-                        datasets: [{
-                            label: 'Accuracy %',
-                            data: data.markets.map(m => m.accuracy),
-                            backgroundColor: 'rgba(54, 162, 235, 0.8)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: { display: false }
+                    window.performanceChart = new Chart(ctx.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: data.markets.map(m => m.name || 'Unknown'),
+                            datasets: [{
+                                label: 'Accuracy %',
+                                data: data.markets.map(m => m.accuracy || 0),
+                                backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 1
+                            }]
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 100
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { display: false }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100
+                                }
                             }
                         }
-                    }
-                });
+                    });
+                } catch (error) {
+                    console.error('Error updating performance charts:', error);
+                }
             }
 
         function loadHeatmap() {
@@ -833,41 +855,45 @@
         }
 
         function updateAccuracyTrend(data) {
-                if (!data.success || !data.trends) return;
+                try {
+                    if (!data || !data.success || !data.trends || !Array.isArray(data.trends)) return;
 
-                const ctx = document.getElementById('accuracyChart');
-                if (!ctx) return;
+                    const ctx = document.getElementById('accuracyChart');
+                    if (!ctx) return;
 
-                // Clear existing chart if any
-                if (window.trendChart) {
-                    window.trendChart.destroy();
-                }
+                    // Clear existing chart if any
+                    if (window.trendChart) {
+                        window.trendChart.destroy();
+                    }
 
-                window.trendChart = new Chart(ctx.getContext('2d'), {
-                    type: 'line',
-                    data: {
-                        labels: data.trends.map(t => t.date),
-                        datasets: [{
-                            label: 'Accuracy Trend',
-                            data: data.trends.map(t => t.accuracy),
-                            borderColor: 'rgba(255, 99, 132, 1)',
-                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                            tension: 0.1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: { display: false }
+                    window.trendChart = new Chart(ctx.getContext('2d'), {
+                        type: 'line',
+                        data: {
+                            labels: data.trends.map(t => t.date || 'Unknown'),
+                            datasets: [{
+                                label: 'Accuracy Trend',
+                                data: data.trends.map(t => t.accuracy || 0),
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                tension: 0.1
+                            }]
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 100
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { display: false }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100
+                                }
                             }
                         }
-                    }
-                });
+                    });
+                } catch (error) {
+                    console.error('Error updating accuracy trend:', error);
+                }
             }
 
         function loadRiskMetrics() {
