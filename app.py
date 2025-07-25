@@ -1,25 +1,130 @@
+
 import os
 import json
 import pandas as pd
-from datetime import datetime, timedelta
-from flask import Flask, render_template, jsonify
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
+from datetime import datetime, timedelta
+from flask import Flask, render_template, jsonify, request
+from flask_socketio import SocketIO, emit
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, VotingClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.metrics import accuracy_score
 import warnings
 from dotenv import load_dotenv
+import threading
+import time
+import sqlite3
+from apscheduler.schedulers.background import BackgroundScheduler
+import plotly.graph_objs as go
+import plotly.utils
 
 load_dotenv()
-
-# === CONFIG ===
 warnings.filterwarnings("ignore")
+
+# === ENHANCED CONFIG ===
 MARKETS = ["Time Bazar", "Milan Day", "Rajdhani Day", "Kalyan", "Milan Night", "Rajdhani Night", "Main Bazar"]
 DATA_FILE = "satta_data.csv"
 PRED_FILE = "today_ml_prediction.csv"
 ACCURACY_FILE = "prediction_accuracy.csv"
+DB_FILE = "satta_analytics.db"
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-# === UTILS ===
+# === DATABASE SETUP ===
+def init_database():
+    conn = sqlite3.connect(DB_FILE)
+    cursor = conn.cursor()
+    
+    # User preferences table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS user_preferences (
+            id INTEGER PRIMARY KEY,
+            user_id TEXT UNIQUE,
+            favorite_markets TEXT,
+            notification_settings TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Prediction confidence table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS prediction_confidence (
+            id INTEGER PRIMARY KEY,
+            market TEXT,
+            date TEXT,
+            confidence_score REAL,
+            model_type TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Performance tracking table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS performance_tracking (
+            id INTEGER PRIMARY KEY,
+            market TEXT,
+            date TEXT,
+            prediction_type TEXT,
+            predicted_value TEXT,
+            actual_value TEXT,
+            is_correct BOOLEAN,
+            profit_loss REAL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
+
+# === ADVANCED ML MODELS ===
+class EnsemblePredictor:
+    def __init__(self):
+        self.models = {
+            'rf': RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42),
+            'gb': GradientBoostingClassifier(n_estimators=100, random_state=42),
+            'nn': MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=500, random_state=42)
+        }
+        self.ensemble = None
+        self.confidence_scores = {}
+    
+    def train(self, X, y):
+        try:
+            # Individual model training
+            for name, model in self.models.items():
+                model.fit(X, y)
+            
+            # Ensemble model
+            self.ensemble = VotingClassifier(
+                estimators=[(name, model) for name, model in self.models.items()],
+                voting='soft'
+            )
+            self.ensemble.fit(X, y)
+            return True
+        except Exception as e:
+            print(f"Model training error: {e}")
+            return False
+    
+    def predict_with_confidence(self, X):
+        if self.ensemble is None:
+            return None, 0.0
+        
+        # Get predictions and probabilities
+        prediction = self.ensemble.predict(X)[0]
+        probabilities = self.ensemble.predict_proba(X)[0]
+        
+        # Calculate confidence as max probability
+        confidence = np.max(probabilities)
+        
+        # Get top predictions with probabilities
+        classes = self.ensemble.classes_
+        top_indices = np.argsort(probabilities)[-5:][::-1]
+        top_predictions = [(classes[i], probabilities[i]) for i in top_indices]
+        
+        return top_predictions, confidence
+
+# === ENHANCED UTILITY FUNCTIONS ===
 def patti_to_digit(patti):
     return sum(int(d) for d in str(int(patti)).zfill(3)) % 10
 
@@ -33,7 +138,7 @@ def generate_pattis(open_vals, close_vals):
             pattis.add(sorted_digits)
         except:
             continue
-    return sorted(pattis)[:4]
+    return sorted(list(pattis))[:6]
 
 def next_prediction_date():
     today = datetime.now()
@@ -42,191 +147,234 @@ def next_prediction_date():
         return (tomorrow + timedelta(days=1)).strftime("%d/%m/%Y")
     return tomorrow.strftime("%d/%m/%Y")
 
-# === LOAD DATA ===
+def calculate_profit_loss(prediction, actual, bet_amount=100):
+    """Calculate profit/loss based on prediction accuracy"""
+    if prediction == actual:
+        return bet_amount * 9  # 9:1 ratio for exact match
+    return -bet_amount
+
+# === ENHANCED DATA LOADING ===
 def load_data():
-    df = pd.read_csv(DATA_FILE)
-    df["Market"] = df["Market"].astype(str).str.strip()
-    df["Date"] = pd.to_datetime(df["Date"], errors="coerce", dayfirst=True)
-    df = df.dropna(subset=["Date", "Market", "Open", "Close", "Jodi"])
-    df["Open"] = pd.to_numeric(df["Open"], errors="coerce")
-    df["Close"] = pd.to_numeric(df["Close"], errors="coerce")
-    df["Jodi"] = df["Jodi"].astype(str).str.zfill(2).str[-2:]
-    return df.dropna()
+    try:
+        df = pd.read_csv(DATA_FILE)
+        df["Market"] = df["Market"].astype(str).str.strip()
+        df["Date"] = pd.to_datetime(df["Date"], errors="coerce", dayfirst=True)
+        df = df.dropna(subset=["Date", "Market", "Open", "Close", "Jodi"])
+        df["Open"] = pd.to_numeric(df["Open"], errors="coerce")
+        df["Close"] = pd.to_numeric(df["Close"], errors="coerce")
+        df["Jodi"] = df["Jodi"].astype(str).str.zfill(2).str[-2:]
+        return df.dropna()
+    except Exception as e:
+        print(f"Error loading data: {e}")
+        return pd.DataFrame()
 
-# === FEATURE ENGINEERING ===
-def engineer_features(df):
+# === ADVANCED FEATURE ENGINEERING ===
+def engineer_advanced_features(df):
     df = df.sort_values("Date").copy()
-
-    # Previous values
+    
+    # Basic features
     df["Prev_Open"] = df["Open"].shift(1)
     df["Prev_Close"] = df["Close"].shift(1)
     df["Prev_Jodi"] = df["Jodi"].shift(1)
-
-    # Rolling averages
-    df["Open_MA3"] = df["Open"].rolling(3).mean()
-    df["Close_MA3"] = df["Close"].rolling(3).mean()
-    df["Open_MA7"] = df["Open"].rolling(7).mean()
-    df["Close_MA7"] = df["Close"].rolling(7).mean()
-
-    # Volatility features
-    df["Open_Std3"] = df["Open"].rolling(3).std()
-    df["Close_Std3"] = df["Close"].rolling(3).std()
-
-    # Cyclical features
+    
+    # Rolling statistics
+    for window in [3, 7, 14]:
+        df[f"Open_MA{window}"] = df["Open"].rolling(window).mean()
+        df[f"Close_MA{window}"] = df["Close"].rolling(window).mean()
+        df[f"Open_Std{window}"] = df["Open"].rolling(window).std()
+        df[f"Close_Std{window}"] = df["Close"].rolling(window).std()
+    
+    # Time-based features
     df["Weekday"] = df["Date"].dt.weekday
     df["Day_of_Month"] = df["Date"].dt.day
     df["Week_of_Year"] = df["Date"].dt.isocalendar().week
-
+    df["Month"] = df["Date"].dt.month
+    df["Quarter"] = df["Date"].dt.quarter
+    
     # Lag features
-    df["Open_Lag2"] = df["Open"].shift(2)
-    df["Close_Lag2"] = df["Close"].shift(2)
-
+    for lag in [2, 3, 7]:
+        df[f"Open_Lag{lag}"] = df["Open"].shift(lag)
+        df[f"Close_Lag{lag}"] = df["Close"].shift(lag)
+    
     # Trend features
     df["Open_Trend"] = df["Open"] - df["Open"].shift(1)
     df["Close_Trend"] = df["Close"] - df["Close"].shift(1)
-
+    df["Open_Momentum"] = df["Open"].rolling(3).apply(lambda x: x.iloc[-1] - x.iloc[0])
+    df["Close_Momentum"] = df["Close"].rolling(3).apply(lambda x: x.iloc[-1] - x.iloc[0])
+    
+    # Frequency encoding
+    df["Open_Freq"] = df.groupby("Open")["Open"].transform("count")
+    df["Close_Freq"] = df.groupby("Close")["Close"].transform("count")
+    
+    # Pattern features
+    df["Is_Weekend_Before"] = (df["Date"].dt.weekday >= 5).astype(int)
+    df["Days_Since_Last_Occurrence"] = df.groupby(["Open", "Close"]).cumcount()
+    
     return df.dropna()
 
-# === MODEL TRAINING ===
-def train_model(X, y):
-    if len(X) < 10:
-        return None
+# === PATTERN ANALYSIS ===
+def analyze_patterns(df, market):
+    """Advanced pattern analysis for market trends"""
+    market_data = df[df["Market"] == market].tail(100)
+    
+    patterns = {
+        "hot_numbers": {},
+        "cold_numbers": {},
+        "sequences": [],
+        "weekday_patterns": {},
+        "monthly_patterns": {}
+    }
+    
+    # Hot and cold number analysis
+    all_numbers = list(market_data["Open"]) + list(market_data["Close"])
+    number_freq = pd.Series(all_numbers).value_counts()
+    patterns["hot_numbers"] = number_freq.head(10).to_dict()
+    patterns["cold_numbers"] = number_freq.tail(10).to_dict()
+    
+    # Weekday patterns
+    for day in range(7):
+        day_data = market_data[market_data["Date"].dt.weekday == day]
+        if not day_data.empty:
+            patterns["weekday_patterns"][day] = {
+                "avg_open": day_data["Open"].mean(),
+                "avg_close": day_data["Close"].mean(),
+                "most_frequent": day_data["Jodi"].mode().iloc[0] if not day_data["Jodi"].mode().empty else "00"
+            }
+    
+    # Monthly patterns
+    for month in range(1, 13):
+        month_data = market_data[market_data["Date"].dt.month == month]
+        if not month_data.empty:
+            patterns["monthly_patterns"][month] = {
+                "avg_open": month_data["Open"].mean(),
+                "avg_close": month_data["Close"].mean()
+            }
+    
+    return patterns
 
-    from sklearn.ensemble import GradientBoostingClassifier, VotingClassifier
-    from sklearn.svm import SVC
-
-    # Ensemble of models
-    rf = RandomForestClassifier(n_estimators=200, max_depth=10, random_state=42)
-    gb = GradientBoostingClassifier(n_estimators=100, random_state=42)
-    svm = SVC(probability=True, random_state=42)
-
-    ensemble = VotingClassifier(
-        estimators=[('rf', rf), ('gb', gb), ('svm', svm)],
-        voting='soft'
-    )
-
-    try:
-        ensemble.fit(X, y)
-        return ensemble
-    except:
-        # Fallback to single model
-        rf.fit(X, y)
-        return rf
-
-# === TRAIN + PREDICT ===
-def train_and_predict(df, market, prediction_date):
+# === ENHANCED PREDICTION SYSTEM ===
+def train_and_predict_advanced(df, market, prediction_date):
     df_market = df[df["Market"] == market].copy()
-    if len(df_market) < 6:
-        return None, None, None, "Insufficient data"
-
-    df_market = engineer_features(df_market)
+    if len(df_market) < 20:
+        return None, None, None, "Insufficient data", 0.0
+    
+    df_market = engineer_advanced_features(df_market)
     if df_market.empty:
-        return None, None, None, "Feature error"
-
-    last_row = df_market.iloc[-1]
-
-    # Select all available features
-    feature_cols = [
-        "Prev_Open", "Prev_Close", "Prev_Jodi", "Open_MA3", "Close_MA3",
-        "Open_MA7", "Close_MA7", "Open_Std3", "Close_Std3", "Weekday",
-        "Day_of_Month", "Week_of_Year", "Open_Lag2", "Close_Lag2",
-        "Open_Trend", "Close_Trend"
-    ]
-
-    # Use only available columns
-    available_cols = [col for col in feature_cols if col in df_market.columns]
-    X = df_market[available_cols]
-
+        return None, None, None, "Feature engineering failed", 0.0
+    
+    # Get pattern analysis
+    patterns = analyze_patterns(df, market)
+    
+    # Feature selection
+    feature_cols = [col for col in df_market.columns if col not in ["Date", "Market", "Open", "Close", "Jodi"]]
+    available_cols = [col for col in feature_cols if col in df_market.columns and df_market[col].notna().sum() > len(df_market) * 0.5]
+    
+    if len(available_cols) < 5:
+        return None, None, None, "Insufficient features", 0.0
+    
+    X = df_market[available_cols].fillna(df_market[available_cols].mean())
     y_open = df_market["Open"].astype(int)
     y_close = df_market["Close"].astype(int)
     y_jodi = df_market["Jodi"]
-
-    model_open = train_model(X, y_open)
-    model_close = train_model(X, y_close)
-    model_jodi = train_model(X, y_jodi)
-
-    if not all([model_open, model_close, model_jodi]):
-        return None, None, None, "Model train fail"
-
+    
+    # Train ensemble models
+    predictor_open = EnsemblePredictor()
+    predictor_close = EnsemblePredictor()
+    predictor_jodi = EnsemblePredictor()
+    
+    if not all([
+        predictor_open.train(X, y_open),
+        predictor_close.train(X, y_close),
+        predictor_jodi.train(X, y_jodi)
+    ]):
+        return None, None, None, "Model training failed", 0.0
+    
     # Prepare prediction features
+    last_row = df_market.iloc[-1]
     pred_date = datetime.strptime(prediction_date, "%d/%m/%Y")
-    X_pred_dict = {
-        "Prev_Open": last_row["Open"],
-        "Prev_Close": last_row["Close"],
-        "Weekday": pred_date.weekday(),
-        "Day_of_Month": pred_date.day,
-        "Week_of_Year": pred_date.isocalendar().week
-    }
-
-    # Add other features if available
+    
+    # Build prediction row
+    X_pred_dict = {}
     for col in available_cols:
-        if col not in X_pred_dict and col in last_row:
+        if col in last_row and pd.notna(last_row[col]):
             X_pred_dict[col] = last_row[col]
+        elif col.endswith('Weekday'):
+            X_pred_dict[col] = pred_date.weekday()
+        elif col.endswith('Day_of_Month'):
+            X_pred_dict[col] = pred_date.day
+        elif col.endswith('Month'):
+            X_pred_dict[col] = pred_date.month
+        else:
+            X_pred_dict[col] = df_market[col].mean()
+    
+    X_pred = pd.DataFrame([X_pred_dict])
+    
+    # Get predictions with confidence
+    open_preds, open_conf = predictor_open.predict_with_confidence(X_pred)
+    close_preds, close_conf = predictor_close.predict_with_confidence(X_pred)
+    jodi_preds, jodi_conf = predictor_jodi.predict_with_confidence(X_pred)
+    
+    if not all([open_preds, close_preds, jodi_preds]):
+        return None, None, None, "Prediction failed", 0.0
+    
+    # Extract top predictions
+    open_vals = [pred[0] for pred in open_preds[:3]]
+    close_vals = [pred[0] for pred in close_preds[:3]]
+    jodi_vals = [pred[0] for pred in jodi_preds[:10]]
+    
+    # Calculate overall confidence
+    overall_confidence = (open_conf + close_conf + jodi_conf) / 3
+    
+    # Save confidence to database
+    save_confidence_score(market, prediction_date, overall_confidence, "ensemble")
+    
+    return open_vals, close_vals, jodi_vals, "Prediction successful", overall_confidence
 
-    X_pred = pd.DataFrame([{k: v for k, v in X_pred_dict.items() if k in available_cols}])
+# === DATABASE OPERATIONS ===
+def save_confidence_score(market, date, confidence, model_type):
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT OR REPLACE INTO prediction_confidence 
+            (market, date, confidence_score, model_type) 
+            VALUES (?, ?, ?, ?)
+        ''', (market, date, confidence, model_type))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Error saving confidence score: {e}")
 
-    open_probs = model_open.predict_proba(X_pred)[0]
-    close_probs = model_close.predict_proba(X_pred)[0]
-    jodi_probs = model_jodi.predict_proba(X_pred)[0]
+def get_market_performance(market, days=30):
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT * FROM performance_tracking 
+            WHERE market = ? AND date >= date('now', '-{} days')
+            ORDER BY date DESC
+        '''.format(days), (market,))
+        results = cursor.fetchall()
+        conn.close()
+        return results
+    except Exception as e:
+        print(f"Error getting market performance: {e}")
+        return []
 
-    open_classes = model_open.classes_
-    close_classes = model_close.classes_
-    jodi_classes = model_jodi.classes_
+# === REAL-TIME FEATURES ===
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+    emit('status', {'msg': 'Connected to real-time updates'})
 
-    # Get top predictions
-    open_vals = [open_classes[i] for i in np.argsort(open_probs)[-3:][::-1]]
-    close_vals = [close_classes[i] for i in np.argsort(close_probs)[-3:][::-1]]
-    jodi_vals = [jodi_classes[i] for i in np.argsort(jodi_probs)[-15:][::-1]]
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('Client disconnected')
 
-    # Pattern analysis - add frequently occurring numbers
-    recent_data = df_market.tail(20)
-    open_freq = recent_data["Open"].value_counts().head(3).index.tolist()
-    close_freq = recent_data["Close"].value_counts().head(3).index.tolist()
+def broadcast_update(data):
+    socketio.emit('update', data)
 
-    # Combine ML predictions with pattern analysis
-    open_combined = list(dict.fromkeys(open_vals + open_freq))[:3]
-    close_combined = list(dict.fromkeys(close_vals + close_freq))[:3]
-
-    # Add hot and cold number analysis
-    hot_numbers = get_hot_numbers(df_market)
-    cold_numbers = get_cold_numbers(df_market)
-
-    # Final selection with balanced approach
-    final_open = select_balanced_numbers(open_combined, hot_numbers, cold_numbers)[:2]
-    final_close = select_balanced_numbers(close_combined, hot_numbers, cold_numbers)[:2]
-
-    return final_open, final_close, jodi_vals[:10], "Prediction successful"
-
-def get_hot_numbers(df):
-    """Get frequently occurring numbers in recent period"""
-    recent = df.tail(30)
-    all_nums = list(recent["Open"]) + list(recent["Close"])
-    freq = pd.Series(all_nums).value_counts()
-    return freq.head(5).index.tolist()
-
-def get_cold_numbers(df):
-    """Get less frequently occurring numbers"""
-    recent = df.tail(30)
-    all_nums = list(recent["Open"]) + list(recent["Close"])
-    freq = pd.Series(all_nums).value_counts()
-    return freq.tail(3).index.tolist()
-
-def select_balanced_numbers(predictions, hot_nums, cold_nums):
-    """Balance predictions with hot/cold analysis"""
-    result = []
-    for pred in predictions:
-        if len(result) < 2:
-            result.append(pred)
-
-    # Add one hot number if space available
-    for hot in hot_nums:
-        if hot not in result and len(result) < 3:
-            result.append(hot)
-            break
-
-    return result
-
-# === ROUTES ===
+# === ENHANCED ROUTES ===
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -234,63 +382,30 @@ def index():
 @app.route('/api/predictions')
 def get_predictions():
     try:
-        # Check if data file exists
-        if not os.path.exists(DATA_FILE):
-            return jsonify({
-                "success": False,
-                "error": "Data file not found. Please ensure satta_data.csv exists."
-            }), 404
-
-        # Check if predictions already exist for today
-        prediction_date = next_prediction_date()
-        if os.path.exists(PRED_FILE):
-            try:
-                existing_preds = pd.read_csv(PRED_FILE)
-                existing_preds['Date'] = pd.to_datetime(existing_preds['Date'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
-                today_preds = existing_preds[existing_preds['Date'] == prediction_date]
-
-                if len(today_preds) > 0:
-                    # Return existing predictions
-                    predictions = []
-                    for _, row in today_preds.iterrows():
-                        predictions.append({
-                            "market": row['Market'],
-                            "status": "success",
-                            "open": row['Open'].split(', '),
-                            "close": row['Close'].split(', '),
-                            "pattis": row['Pattis'].split(', '),
-                            "jodis": row['Jodis'].split(', '),
-                            "date": prediction_date
-                        })
-
-                    return jsonify({
-                        "success": True,
-                        "date": prediction_date,
-                        "predictions": predictions,
-                        "cached": True
-                    })
-            except Exception as e:
-                print(f"Error loading cached predictions: {e}")
-
         df = load_data()
+        prediction_date = next_prediction_date()
         predictions = []
-
+        
         for market in MARKETS:
             try:
-                open_vals, close_vals, jodis, status = train_and_predict(df, market, prediction_date)
-
+                open_vals, close_vals, jodis, status, confidence = train_and_predict_advanced(df, market, prediction_date)
+                
                 if not open_vals or not close_vals or not jodis:
                     predictions.append({
                         "market": market,
                         "status": "error",
-                        "message": status
+                        "message": status,
+                        "confidence": 0.0
                     })
                     continue
-
+                
                 open_digits = [str(patti_to_digit(val)) for val in open_vals]
                 close_digits = [str(patti_to_digit(val)) for val in close_vals]
                 pattis = generate_pattis(open_vals, close_vals)
-
+                
+                # Get pattern analysis
+                patterns = analyze_patterns(df, market)
+                
                 predictions.append({
                     "market": market,
                     "status": "success",
@@ -298,314 +413,224 @@ def get_predictions():
                     "close": close_digits,
                     "pattis": pattis,
                     "jodis": jodis,
+                    "confidence": round(confidence * 100, 2),
+                    "hot_numbers": list(patterns["hot_numbers"].keys())[:5],
+                    "patterns": patterns,
                     "date": prediction_date
                 })
             except Exception as e:
                 predictions.append({
                     "market": market,
                     "status": "error",
-                    "message": f"Prediction failed: {str(e)}"
+                    "message": f"Prediction failed: {str(e)}",
+                    "confidence": 0.0
                 })
-
+        
         return jsonify({
             "success": True,
             "date": prediction_date,
             "predictions": predictions
         })
-
+        
     except Exception as e:
         return jsonify({
             "success": False,
             "error": str(e)
         }), 500
 
-@app.route('/api/today-results')
-def get_today_results():
+@app.route('/api/analytics/heatmap/<market>')
+def get_heatmap_data(market):
     try:
-        today = datetime.now().strftime("%d/%m/%Y")
+        df = load_data()
+        market_data = df[df["Market"] == market].tail(100)
+        
+        # Create number frequency heatmap data
+        numbers = list(range(10))
+        frequency_matrix = []
+        
+        for i in numbers:
+            row = []
+            for j in numbers:
+                count = len(market_data[
+                    (market_data["Open"] == i) | (market_data["Close"] == j)
+                ])
+                row.append(count)
+            frequency_matrix.append(row)
+        
+        return jsonify({
+            "success": True,
+            "heatmap_data": frequency_matrix,
+            "labels": numbers
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
-        # Load actual results
-        try:
-            df = pd.read_csv(DATA_FILE)
-            df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
-            df = df[df['Date'] == today]
-        except Exception as e:
-            print(f"Error loading actual results: {e}")
-            df = pd.DataFrame()
+@app.route('/api/analytics/trends/<market>')
+def get_trend_analysis(market):
+    try:
+        df = load_data()
+        market_data = df[df["Market"] == market].tail(50)
+        
+        # Prepare trend data
+        dates = market_data["Date"].dt.strftime("%Y-%m-%d").tolist()
+        open_values = market_data["Open"].tolist()
+        close_values = market_data["Close"].tolist()
+        
+        # Calculate moving averages
+        ma_3 = market_data["Open"].rolling(3).mean().tolist()
+        ma_7 = market_data["Open"].rolling(7).mean().tolist()
+        
+        return jsonify({
+            "success": True,
+            "dates": dates,
+            "open_values": open_values,
+            "close_values": close_values,
+            "ma_3": ma_3,
+            "ma_7": ma_7
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
-        # Load predictions
-        try:
-            pred_df = pd.read_csv(PRED_FILE)
-            pred_df['Date'] = pd.to_datetime(pred_df['Date'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
-            pred_df = pred_df[pred_df['Date'] == today]
-        except Exception as e:
-            print(f"Error loading predictions: {e}")
-            pred_df = pd.DataFrame()
-
+@app.route('/api/profit-loss-calculator', methods=['POST'])
+def calculate_profit_loss_api():
+    try:
+        data = request.get_json()
+        predictions = data.get('predictions', [])
+        actuals = data.get('actuals', [])
+        bet_amounts = data.get('bet_amounts', [])
+        
         results = []
-        for _, actual_row in df.iterrows():
-            market = actual_row['Market']
-
-            # Find corresponding prediction
-            pred_row = pred_df[pred_df['Market'] == market]
-            prediction = pred_row.iloc[0].to_dict() if not pred_row.empty else None
-
-            result = {
-                'market': market,
-                'actual': {
-                    'open': str(actual_row['Open']),
-                    'close': str(actual_row['Close']),
-                    'jodi': str(actual_row['Jodi'])
-                },
-                'prediction': prediction,
-                'matches': {}
-            }
-
-            if prediction:
-                # Check matches
-                pred_open = [x.strip() for x in str(prediction.get('Open', '')).split(',')]
-                pred_close = [x.strip() for x in str(prediction.get('Close', '')).split(',')]
-                pred_jodi = [x.strip() for x in str(prediction.get('Jodis', '')).split(',')]
-                pred_pattis = [x.strip() for x in str(prediction.get('Pattis', '')).split(',')]
-
-                actual_jodi = str(actual_row['Jodi']).zfill(2)
-                actual_open_digit = actual_jodi[0]
-                actual_close_digit = actual_jodi[1]
-
-                # Generate actual pattis from actual numbers
-                actual_open = int(actual_row['Open'])
-                actual_close = int(actual_row['Close'])
-                actual_pattis = generate_pattis([actual_open], [actual_close])
-
-                # Check patti matches
-                patti_match = any(patti in pred_pattis for patti in actual_pattis)
-
-                result['matches'] = {
-                    'open': actual_open_digit in pred_open,
-                    'close': actual_close_digit in pred_close,
-                    'jodi': actual_jodi in pred_jodi,
-                    'patti': patti_match
-                }
-
-                result['actual']['pattis'] = actual_pattis
-
-            results.append(result)
-
+        total_profit_loss = 0
+        
+        for i, (pred, actual, bet) in enumerate(zip(predictions, actuals, bet_amounts)):
+            pl = calculate_profit_loss(pred, actual, bet)
+            total_profit_loss += pl
+            results.append({
+                "prediction": pred,
+                "actual": actual,
+                "bet_amount": bet,
+                "profit_loss": pl,
+                "result": "WIN" if pl > 0 else "LOSS"
+            })
+        
         return jsonify({
             "success": True,
             "results": results,
-            "date": today
+            "total_profit_loss": total_profit_loss,
+            "total_bets": len(predictions),
+            "win_rate": len([r for r in results if r["result"] == "WIN"]) / len(results) * 100
         })
-
     except Exception as e:
         return jsonify({
             "success": False,
             "error": str(e)
         }), 500
 
-@app.route('/api/performance')
-def get_performance_stats():
+@app.route('/api/export/csv/<data_type>')
+def export_csv(data_type):
     try:
-        # Try to load from cache first
-        cache_file = "cache/performance.json"
-        if os.path.exists(cache_file):
-            try:
-                with open(cache_file, 'r') as f:
-                    cache_data = json.load(f)
-                return jsonify(cache_data)
-            except Exception as e:
-                print(f"Cache load failed: {e}")
-
-        # Calculate detailed performance metrics
-        df = load_data()
-        today = datetime.now().strftime("%d/%m/%Y")
-
-        # Load prediction history
-        try:
-            pred_df = pd.read_csv(PRED_FILE)
-        except:
-            pred_df = pd.DataFrame()
-
-        stats = {
-            'total_predictions': len(pred_df),
-            'markets_covered': len(MARKETS),
-            'accuracy_trend': calculate_accuracy_trend(df, pred_df),
-            'best_performing_market': get_best_market(df, pred_df),
-            'prediction_confidence': calculate_confidence_scores()
+        if data_type == "predictions":
+            df = pd.read_csv(PRED_FILE)
+        elif data_type == "results":
+            df = load_data()
+        else:
+            return jsonify({"error": "Invalid data type"}), 400
+        
+        csv_data = df.to_csv(index=False)
+        return csv_data, 200, {
+            'Content-Type': 'text/csv',
+            'Content-Disposition': f'attachment; filename={data_type}_{datetime.now().strftime("%Y%m%d")}.csv'
         }
-
-        return jsonify({
-            "success": True,
-            "stats": stats
-        })
     except Exception as e:
         return jsonify({
             "success": False,
             "error": str(e)
         }), 500
 
-def calculate_accuracy_trend(actual_df, pred_df):
-    """Calculate accuracy trend over time"""
-    recent_dates = []
-    accuracies = []
+@app.route('/api/user-preferences', methods=['GET', 'POST'])
+def user_preferences():
+    try:
+        if request.method == 'POST':
+            data = request.get_json()
+            user_id = data.get('user_id', 'default')
+            favorite_markets = json.dumps(data.get('favorite_markets', []))
+            notification_settings = json.dumps(data.get('notification_settings', {}))
+            
+            conn = sqlite3.connect(DB_FILE)
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT OR REPLACE INTO user_preferences 
+                (user_id, favorite_markets, notification_settings) 
+                VALUES (?, ?, ?)
+            ''', (user_id, favorite_markets, notification_settings))
+            conn.commit()
+            conn.close()
+            
+            return jsonify({"success": True, "message": "Preferences saved"})
+        else:
+            user_id = request.args.get('user_id', 'default')
+            conn = sqlite3.connect(DB_FILE)
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM user_preferences WHERE user_id = ?', (user_id,))
+            result = cursor.fetchone()
+            conn.close()
+            
+            if result:
+                return jsonify({
+                    "success": True,
+                    "preferences": {
+                        "favorite_markets": json.loads(result[2]),
+                        "notification_settings": json.loads(result[3])
+                    }
+                })
+            else:
+                return jsonify({
+                    "success": True,
+                    "preferences": {
+                        "favorite_markets": [],
+                        "notification_settings": {}
+                    }
+                })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
-    for i in range(7, 0, -1):
-        date = (datetime.now() - timedelta(days=i)).strftime("%d/%m/%Y")
-        day_accuracy = calculate_day_accuracy(actual_df, pred_df, date)
-        if day_accuracy is not None:
-            recent_dates.append(date)
-            accuracies.append(day_accuracy)
-
-    return {'dates': recent_dates, 'accuracies': accuracies}
-
-def calculate_day_accuracy(actual_df, pred_df, date):
-    """Calculate accuracy for a specific date"""
-    # Convert date columns to string format for comparison
-    actual_df_copy = actual_df.copy()
-    pred_df_copy = pred_df.copy()
-    actual_df_copy['Date'] = pd.to_datetime(actual_df_copy['Date'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
-    pred_df_copy['Date'] = pd.to_datetime(pred_df_copy['Date'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
-
-    actual_day = actual_df_copy[actual_df_copy['Date'] == date]
-    pred_day = pred_df_copy[pred_df_copy['Date'] == date]
-
-    if actual_day.empty or pred_day.empty:
-        return None
-
-    matches = 0
-    total = 0
-
-    for _, actual in actual_day.iterrows():
-        market = actual['Market']
-        pred = pred_day[pred_day['Market'] == market]
-
-        if not pred.empty:
-            total += 1
-            # Check if any prediction matched
-            pred_row = pred.iloc[0]
-            if check_any_match(actual, pred_row):
-                matches += 1
-
-    return (matches / total * 100) if total > 0 else None
-
-def check_any_match(actual, prediction):
-    """Check if any part of prediction matched actual result"""
-    pred_open = [x.strip() for x in str(prediction.get('Open', '')).split(',')]
-    pred_close = [x.strip() for x in str(prediction.get('Close', '')).split(',')]
-
-    actual_jodi = str(actual['Jodi']).zfill(2)
-    return actual_jodi[0] in pred_open or actual_jodi[1] in pred_close
-
-def get_best_market(actual_df, pred_df):
-    """Find the market with highest accuracy"""
-    market_scores = {}
-
-    for market in MARKETS:
-        market_actual = actual_df[actual_df['Market'] == market].tail(30)
-        market_pred = pred_df[pred_df['Market'] == market].tail(30)
-
-        if not market_actual.empty and not market_pred.empty:
-            accuracy = calculate_market_accuracy(market_actual, market_pred)
-            market_scores[market] = accuracy
-
-    if market_scores:
-        best_market = max(market_scores, key=market_scores.get)
-        return {'market': best_market, 'accuracy': market_scores[best_market]}
-
-    return {'market': 'N/A', 'accuracy': 0}
-
-def calculate_market_accuracy(actual, pred):
-    """Calculate accuracy for a specific market"""
-    matches = 0
-    # Ensure both dataframes have consistent date format
-    actual_copy = actual.copy()
-    pred_copy = pred.copy()
-    actual_copy['Date'] = pd.to_datetime(actual_copy['Date'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
-    pred_copy['Date'] = pd.to_datetime(pred_copy['Date'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
-
-    for _, actual_row in actual_copy.iterrows():
-        date = actual_row['Date']
-        pred_row = pred_copy[pred_copy['Date'] == date]
-        if not pred_row.empty and check_any_match(actual_row, pred_row.iloc[0]):
-            matches += 1
-
-    return (matches / len(actual_copy) * 100) if len(actual_copy) > 0 else 0
-
-def calculate_confidence_scores():
-    """Calculate confidence scores for current predictions"""
-    return {
-        'model_confidence': 75,  # Based on model performance
-        'pattern_strength': 68,   # Based on pattern analysis
-        'overall_confidence': 72  # Combined score
-    }
-
-@app.route('/api/generate-predictions', methods=['POST'])
-def generate_predictions():
+# === BACKGROUND TASKS ===
+def auto_update_predictions():
+    """Background task to update predictions periodically"""
     try:
         df = load_data()
         prediction_date = next_prediction_date()
-
-        try:
-            df_existing = pd.read_csv(PRED_FILE)
-        except FileNotFoundError:
-            df_existing = pd.DataFrame()
-
-        try:
-            df_acc = pd.read_csv(ACCURACY_FILE)
-        except FileNotFoundError:
-            df_acc = pd.DataFrame()
-
-        new_preds = []
-
+        
         for market in MARKETS:
-            open_vals, close_vals, jodis, status = train_and_predict(df, market, prediction_date)
-
-            if not open_vals or not close_vals or not jodis:
-                continue
-
-            open_digits = [str(patti_to_digit(val)) for val in open_vals]
-            close_digits = [str(patti_to_digit(val)) for val in close_vals]
-            pattis = generate_pattis(open_vals, close_vals)
-
-            new_preds.append({
-                "Market": market,
-                "Date": prediction_date,
-                "Open": ", ".join(open_digits),
-                "Close": ", ".join(close_digits),
-                "Pattis": ", ".join(pattis),
-                "Jodis": ", ".join(jodis)
-            })
-
-            df_acc = pd.concat([df_acc, pd.DataFrame([{
-                "Date": prediction_date,
-                "Market": market,
-                "Pred_Open": open_vals,
-                "Pred_Close": close_vals,
-                "Pred_Jodis": jodis
-            }])], ignore_index=True)
-
-        # Save predictions
-        for row in new_preds:
-            df_existing = df_existing[~(
-                (df_existing['Market'] == row['Market']) &
-                (df_existing['Date'] == row['Date'])
-            )]
-        df_combined = pd.concat([df_existing, pd.DataFrame(new_preds)], ignore_index=True)
-        df_combined.to_csv(PRED_FILE, index=False)
-        df_acc.to_csv(ACCURACY_FILE, index=False)
-
-        return jsonify({
-            "success": True,
-            "message": "Predictions generated and saved successfully",
-            "count": len(new_preds)
-        })
-
+            open_vals, close_vals, jodis, status, confidence = train_and_predict_advanced(df, market, prediction_date)
+            if open_vals and close_vals and jodis:
+                # Broadcast update to connected clients
+                broadcast_update({
+                    "type": "prediction_update",
+                    "market": market,
+                    "confidence": round(confidence * 100, 2),
+                    "timestamp": datetime.now().isoformat()
+                })
+        
+        print(f"Auto-updated predictions at {datetime.now()}")
     except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
+        print(f"Auto-update error: {e}")
+
+# === SCHEDULER SETUP ===
+scheduler = BackgroundScheduler()
+scheduler.add_job(auto_update_predictions, 'interval', minutes=30)
+scheduler.start()
 
 if __name__ == "__main__":
+    init_database()
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    socketio.run(app, host="0.0.0.0", port=port, debug=False)

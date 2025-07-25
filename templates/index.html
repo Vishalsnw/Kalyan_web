@@ -1,11 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Satta Matka Pro - AI Predictions</title>
+    <title>Satta Matka Pro - Advanced AI Analytics</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
         :root {
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -19,6 +22,9 @@
             --text-primary: #ffffff;
             --text-secondary: rgba(255, 255, 255, 0.8);
             --accent-gold: #ffd700;
+            --success-color: #4CAF50;
+            --error-color: #f44336;
+            --warning-color: #ff9800;
         }
 
         * {
@@ -35,21 +41,8 @@
             position: relative;
         }
 
-        /* Animated background particles */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="white" opacity="0.1"><animate attributeName="opacity" values="0.1;0.3;0.1" dur="3s" repeatCount="indefinite"/></circle><circle cx="80" cy="40" r="1.5" fill="white" opacity="0.1"><animate attributeName="opacity" values="0.1;0.4;0.1" dur="4s" repeatCount="indefinite"/></circle><circle cx="40" cy="70" r="1" fill="white" opacity="0.1"><animate attributeName="opacity" values="0.1;0.2;0.1" dur="5s" repeatCount="indefinite"/></circle></svg>') repeat;
-            pointer-events: none;
-            z-index: -1;
-        }
-
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 20px;
             position: relative;
@@ -71,37 +64,54 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            text-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
-            position: relative;
-        }
-
-        .header h1::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100px;
-            height: 4px;
-            background: var(--accent-gold);
-            border-radius: 2px;
-            animation: shimmer 2s ease-in-out infinite;
         }
 
         .header p {
             font-size: 1.3rem;
             font-weight: 300;
             color: var(--text-secondary);
-            margin-top: 20px;
         }
 
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 12px 24px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 25px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-tab.active {
+            background: var(--success-gradient);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-light);
+        }
+
+        .nav-tab:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-light);
+        }
+
+        /* Controls */
         .controls {
             display: flex;
             justify-content: center;
             gap: 20px;
             margin-bottom: 40px;
             flex-wrap: wrap;
-            animation: slideInUp 1s ease-out 0.3s both;
         }
 
         .btn {
@@ -123,21 +133,6 @@
             box-shadow: var(--shadow-light);
         }
 
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.6s ease;
-        }
-
-        .btn:hover::before {
-            left: 100%;
-        }
-
         .btn-primary {
             background: var(--success-gradient);
             color: white;
@@ -151,7 +146,6 @@
         .btn-info {
             background: var(--card-gradient);
             color: var(--text-primary);
-            backdrop-filter: blur(15px);
         }
 
         .btn:hover {
@@ -159,66 +153,49 @@
             box-shadow: var(--shadow-heavy);
         }
 
-        .btn:active {
-            transform: translateY(-2px) scale(1.02);
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn i {
-            transition: transform 0.3s ease;
-        }
-
-        .btn:hover i {
-            transform: scale(1.2) rotate(5deg);
-        }
-
-        .loading {
-            text-align: center;
-            color: var(--text-primary);
-            font-size: 1.4rem;
-            margin: 40px 0;
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        .loading i {
-            margin-right: 10px;
-            color: var(--accent-gold);
-        }
-
-        .message {
-            padding: 20px 30px;
-            margin: 20px auto;
-            border-radius: 15px;
-            text-align: center;
-            font-weight: 500;
-            max-width: 600px;
-            backdrop-filter: blur(10px);
+        /* Real-time Status */
+        .realtime-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
             border: 1px solid var(--glass-border);
-            animation: slideInFromRight 0.5s ease-out;
+            border-radius: 15px;
+            padding: 15px;
+            color: var(--text-primary);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .message.success {
-            background: rgba(76, 175, 80, 0.2);
-            border-color: rgba(76, 175, 80, 0.3);
-            color: #4CAF50;
-            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.2);
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--success-color);
+            animation: pulse 2s infinite;
         }
 
-        .message.error {
-            background: rgba(244, 67, 54, 0.2);
-            border-color: rgba(244, 67, 54, 0.3);
-            color: #f44336;
-            box-shadow: 0 8px 25px rgba(244, 67, 54, 0.2);
+        .status-indicator.disconnected {
+            background: var(--error-color);
         }
 
+        /* Content Sections */
+        .content-section {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        /* Enhanced Market Cards */
         .predictions-grid, .results-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
             gap: 25px;
             margin-top: 30px;
         }
@@ -230,27 +207,14 @@
             padding: 30px;
             box-shadow: var(--shadow-light);
             border: 1px solid var(--glass-border);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.4s ease;
             position: relative;
             overflow: hidden;
-            animation: slideInUp 0.6s ease-out;
-        }
-
-        .market-card::before, .result-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--secondary-gradient);
-            border-radius: 20px 20px 0 0;
         }
 
         .market-card:hover, .result-card:hover {
             transform: translateY(-10px) scale(1.02);
             box-shadow: var(--shadow-heavy);
-            border-color: rgba(255, 255, 255, 0.3);
         }
 
         .market-name {
@@ -265,126 +229,203 @@
             background-clip: text;
         }
 
-        .prediction-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .confidence-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
             margin: 15px 0;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
+            overflow: hidden;
         }
 
-        .prediction-row:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding-left: 10px;
-            padding-right: 10px;
+        .confidence-fill {
+            height: 100%;
+            background: var(--success-gradient);
+            border-radius: 4px;
+            transition: width 1s ease;
         }
 
-        .prediction-label {
-            font-weight: 600;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .prediction-label i {
-            color: var(--accent-gold);
-            font-size: 1.1rem;
-        }
-
-        .prediction-value {
-            font-weight: 700;
-            color: var(--text-primary);
-            font-family: 'Courier New', monospace;
-            background: rgba(255, 215, 0, 0.1);
-            padding: 6px 12px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 215, 0, 0.2);
-        }
-
-        .date-info {
+        .confidence-text {
             text-align: center;
-            color: var(--text-primary);
-            font-size: 1.3rem;
             font-weight: 600;
-            margin-bottom: 30px;
-            padding: 20px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(15px);
-            border-radius: 15px;
-            border: 1px solid var(--glass-border);
-            animation: fadeIn 1s ease-out;
+            color: var(--text-primary);
+            margin-top: 10px;
         }
 
-        .date-info i {
-            color: var(--accent-gold);
-            margin-right: 10px;
-        }
-
-        .performance-stats {
+        /* Analytics Charts */
+        .chart-container {
             background: var(--glass-bg);
             backdrop-filter: blur(20px);
             border-radius: 20px;
             padding: 30px;
-            margin-bottom: 30px;
+            margin: 25px 0;
             border: 1px solid var(--glass-border);
-            box-shadow: var(--shadow-light);
-            animation: slideInLeft 0.8s ease-out;
         }
 
-        .performance-stats h3 {
-            color: var(--text-primary);
-            margin-bottom: 25px;
-            font-size: 1.8rem;
+        .chart-title {
+            font-size: 1.5rem;
             font-weight: 700;
-            background: var(--success-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            text-align: center;
         }
 
-        .stat-row {
+        /* Profit/Loss Calculator */
+        .calculator-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 25px 0;
+            border: 1px solid var(--glass-border);
+        }
+
+        .calculator-input {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
             align-items: center;
-            margin: 15px 0;
-            padding: 12px 0;
-            color: var(--text-secondary);
+            gap: 15px;
+        }
+
+        .input-group label {
+            min-width: 120px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .input-group input, .input-group select {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            background: var(--glass-bg);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        /* User Preferences */
+        .preferences-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 25px 0;
+            border: 1px solid var(--glass-border);
+        }
+
+        .preference-group {
+            margin-bottom: 20px;
+        }
+
+        .preference-group h4 {
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            cursor: pointer;
             transition: all 0.3s ease;
         }
 
-        .stat-row:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding-left: 15px;
-            padding-right: 15px;
+        .checkbox-item:hover {
+            background: rgba(255, 255, 255, 0.1);
         }
 
-        .stat-row strong {
+        .checkbox-item input[type="checkbox"] {
+            margin: 0;
+        }
+
+        .checkbox-item label {
             color: var(--text-primary);
-            font-weight: 700;
+            cursor: pointer;
+            margin: 0;
         }
 
-        .match-indicator {
-            display: inline-block;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            margin-left: 15px;
-            animation: bounce 0.5s ease;
+        /* Hot Numbers Display */
+        .hot-numbers {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
         }
 
-        .match-true {
-            background: linear-gradient(135deg, #4CAF50, #45a049);
-            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        .hot-number {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e53);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            animation: pulse 2s infinite;
         }
 
-        .match-false {
-            background: linear-gradient(135deg, #f44336, #d32f2f);
-            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
+        /* Pattern Analysis */
+        .pattern-analysis {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .pattern-title {
+            color: var(--text-primary);
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Loading and Messages */
+        .loading {
+            text-align: center;
+            color: var(--text-primary);
+            font-size: 1.4rem;
+            margin: 40px 0;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .message {
+            padding: 20px 30px;
+            margin: 20px auto;
+            border-radius: 15px;
+            text-align: center;
+            font-weight: 500;
+            max-width: 600px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+        }
+
+        .message.success {
+            background: rgba(76, 175, 80, 0.2);
+            border-color: rgba(76, 175, 80, 0.3);
+            color: #4CAF50;
+        }
+
+        .message.error {
+            background: rgba(244, 67, 54, 0.2);
+            border-color: rgba(244, 67, 54, 0.3);
+            color: #f44336;
         }
 
         .hidden {
@@ -400,39 +441,6 @@
             to {
                 opacity: 1;
                 transform: translateY(0);
-            }
-        }
-
-        @keyframes slideInUp {
-            from {
-                opacity: 0;
-                transform: translateY(50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes slideInLeft {
-            from {
-                opacity: 0;
-                transform: translateX(-50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        @keyframes slideInFromRight {
-            from {
-                opacity: 0;
-                transform: translateX(50px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
             }
         }
 
@@ -454,27 +462,6 @@
             }
         }
 
-        @keyframes shimmer {
-            0%, 100% {
-                transform: translateX(-50%) scaleX(1);
-            }
-            50% {
-                transform: translateX(-50%) scaleX(1.5);
-            }
-        }
-
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {
-                transform: translateY(0);
-            }
-            40% {
-                transform: translateY(-10px);
-            }
-            60% {
-                transform: translateY(-5px);
-            }
-        }
-
         /* Responsive Design */
         @media (max-width: 768px) {
             .container {
@@ -485,140 +472,673 @@
                 font-size: 2.5rem;
             }
 
-            .controls {
-                gap: 15px;
-            }
-
-            .btn {
-                padding: 14px 24px;
-                font-size: 0.9rem;
-            }
-
             .predictions-grid, .results-grid {
                 grid-template-columns: 1fr;
-                gap: 20px;
             }
 
-            .market-card, .result-card {
-                padding: 20px;
+            .nav-tabs {
+                gap: 5px;
+            }
+
+            .nav-tab {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+
+            .realtime-status {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-bottom: 20px;
             }
         }
-
-        /* Scrollbar Styling */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--secondary-gradient);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--success-gradient);
-        }
-
-        /* Loading spinner enhancement */
-        .loading i.fa-spinner {
-            animation: spin 1s linear infinite, pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            from {
-                transform: rotate(0deg);
-            }
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Card stagger animation */
-        .market-card:nth-child(1) { animation-delay: 0.1s; }
-        .market-card:nth-child(2) { animation-delay: 0.2s; }
-        .market-card:nth-child(3) { animation-delay: 0.3s; }
-        .market-card:nth-child(4) { animation-delay: 0.4s; }
-        .market-card:nth-child(5) { animation-delay: 0.5s; }
-        .market-card:nth-child(6) { animation-delay: 0.6s; }
-        .market-card:nth-child(7) { animation-delay: 0.7s; }
-
-        .result-card:nth-child(1) { animation-delay: 0.1s; }
-        .result-card:nth-child(2) { animation-delay: 0.2s; }
-        .result-card:nth-child(3) { animation-delay: 0.3s; }
-        .result-card:nth-child(4) { animation-delay: 0.4s; }
-        .result-card:nth-child(5) { animation-delay: 0.5s; }
-        .result-card:nth-child(6) { animation-delay: 0.6s; }
-        .result-card:nth-child(7) { animation-delay: 0.7s; }
     </style>
 </head>
 <body>
+    <!-- Real-time Status -->
+    <div class="realtime-status">
+        <div class="status-indicator" id="connectionStatus"></div>
+        <span id="statusText">Connecting...</span>
+    </div>
+
     <div class="container">
         <div class="header">
             <h1><i class="fas fa-brain"></i> Satta Matka Pro</h1>
-            <p>Advanced AI-Powered Predictions & Real-Time Analytics</p>
+            <p>Advanced AI-Powered Analytics & Real-Time Predictions</p>
         </div>
 
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <div class="nav-tab active" onclick="showSection('predictions')">
+                <i class="fas fa-crystal-ball"></i> Predictions
+            </div>
+            <div class="nav-tab" onclick="showSection('analytics')">
+                <i class="fas fa-chart-line"></i> Analytics
+            </div>
+            <div class="nav-tab" onclick="showSection('calculator')">
+                <i class="fas fa-calculator"></i> P&L Calculator
+            </div>
+            <div class="nav-tab" onclick="showSection('preferences')">
+                <i class="fas fa-cog"></i> Preferences
+            </div>
+            <div class="nav-tab" onclick="showSection('results')">
+                <i class="fas fa-trophy"></i> Results
+            </div>
+        </div>
+
+        <!-- Controls -->
         <div class="controls">
             <button class="btn btn-primary" onclick="loadPredictions()">
-                <i class="fas fa-crystal-ball"></i> Load Predictions
+                <i class="fas fa-robot"></i> Generate Predictions
             </button>
-            <button class="btn btn-secondary" onclick="generatePredictions()">
-                <i class="fas fa-robot"></i> Generate New
+            <button class="btn btn-secondary" onclick="loadAnalytics()">
+                <i class="fas fa-chart-bar"></i> Load Analytics
             </button>
-            <button class="btn btn-info" onclick="loadTodayResults()">
-                <i class="fas fa-trophy"></i> Today's Results
-            </button>
-            <button class="btn btn-info" onclick="loadPerformance()">
-                <i class="fas fa-chart-line"></i> Performance
+            <button class="btn btn-info" onclick="exportData('predictions')">
+                <i class="fas fa-download"></i> Export CSV
             </button>
         </div>
 
         <div id="loading" class="loading hidden">
-            <i class="fas fa-spinner fa-spin"></i> <span id="loadingText">Loading predictions...</span>
+            <i class="fas fa-spinner fa-spin"></i> <span id="loadingText">Loading...</span>
         </div>
 
         <div id="message" class="message hidden"></div>
 
-        <div id="predictions" class="hidden">
-            <div class="date-info">
-                <i class="fas fa-calendar-alt"></i> Predictions for: <span id="predictionDate"></span>
-            </div>
+        <!-- Predictions Section -->
+        <div id="predictions" class="content-section active">
             <div id="predictionsGrid" class="predictions-grid"></div>
         </div>
 
-        <div id="todayResults" class="hidden">
-            <div class="date-info">
-                <i class="fas fa-calendar-check"></i> Results for: <span id="resultsDate"></span>
+        <!-- Analytics Section -->
+        <div id="analytics" class="content-section">
+            <div class="chart-container">
+                <div class="chart-title">Market Performance Trends</div>
+                <div id="trendsChart"></div>
             </div>
-            <div id="resultsGrid" class="results-grid"></div>
+            
+            <div class="chart-container">
+                <div class="chart-title">Number Frequency Heatmap</div>
+                <select id="marketSelect" onchange="loadHeatmap()" style="margin-bottom: 20px; padding: 10px; border-radius: 5px;">
+                    <option value="Time Bazar">Time Bazar</option>
+                    <option value="Milan Day">Milan Day</option>
+                    <option value="Rajdhani Day">Rajdhani Day</option>
+                    <option value="Kalyan">Kalyan</option>
+                    <option value="Milan Night">Milan Night</option>
+                    <option value="Rajdhani Night">Rajdhani Night</option>
+                    <option value="Main Bazar">Main Bazar</option>
+                </select>
+                <div id="heatmapChart"></div>
+            </div>
         </div>
 
-        <div id="performance" class="hidden">
-            <div class="performance-stats">
-                <h3 style="text-align: center; margin-bottom: 30px;">
-                    <i class="fas fa-chart-bar"></i> Performance Analytics
+        <!-- Calculator Section -->
+        <div id="calculator" class="content-section">
+            <div class="calculator-section">
+                <h3 style="text-align: center; color: var(--text-primary); margin-bottom: 30px;">
+                    <i class="fas fa-calculator"></i> Profit & Loss Calculator
                 </h3>
-                <div id="performanceContent"></div>
+                
+                <div class="calculator-input">
+                    <div class="input-group">
+                        <label>Prediction:</label>
+                        <input type="text" id="predictionInput" placeholder="Enter your prediction">
+                    </div>
+                    <div class="input-group">
+                        <label>Actual Result:</label>
+                        <input type="text" id="actualInput" placeholder="Enter actual result">
+                    </div>
+                    <div class="input-group">
+                        <label>Bet Amount:</label>
+                        <input type="number" id="betAmountInput" placeholder="Enter bet amount" value="100">
+                    </div>
+                    <button class="btn btn-primary" onclick="calculateProfitLoss()">
+                        <i class="fas fa-calculator"></i> Calculate
+                    </button>
+                </div>
+                
+                <div id="calculatorResults" class="hidden"></div>
             </div>
+        </div>
+
+        <!-- Preferences Section -->
+        <div id="preferences" class="content-section">
+            <div class="preferences-section">
+                <h3 style="text-align: center; color: var(--text-primary); margin-bottom: 30px;">
+                    <i class="fas fa-cog"></i> User Preferences
+                </h3>
+                
+                <div class="preference-group">
+                    <h4>Favorite Markets</h4>
+                    <div class="checkbox-group" id="favoriteMarkets"></div>
+                </div>
+                
+                <div class="preference-group">
+                    <h4>Notification Settings</h4>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="notifyResults">
+                            <label for="notifyResults">Result Notifications</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="notifyPredictions">
+                            <label for="notifyPredictions">New Predictions</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="notifyUpdates">
+                            <label for="notifyUpdates">Real-time Updates</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="savePreferences()">
+                    <i class="fas fa-save"></i> Save Preferences
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results" class="content-section">
+            <div id="resultsGrid" class="results-grid"></div>
         </div>
     </div>
 
     <script>
-        function showLoading(show, text = 'Loading predictions...') {
+        // Global variables
+        let socket;
+        let currentSection = 'predictions';
+        let userPreferences = {
+            favorite_markets: [],
+            notification_settings: {}
+        };
+
+        // Initialize Socket.IO connection
+        function initializeSocket() {
+            socket = io();
+            
+            socket.on('connect', function() {
+                updateConnectionStatus(true);
+            });
+            
+            socket.on('disconnect', function() {
+                updateConnectionStatus(false);
+            });
+            
+            socket.on('update', function(data) {
+                handleRealTimeUpdate(data);
+            });
+            
+            socket.on('status', function(data) {
+                console.log('Status:', data.msg);
+            });
+        }
+
+        function updateConnectionStatus(connected) {
+            const indicator = document.getElementById('connectionStatus');
+            const text = document.getElementById('statusText');
+            
+            if (connected) {
+                indicator.classList.remove('disconnected');
+                text.textContent = 'Connected - Real-time updates active';
+            } else {
+                indicator.classList.add('disconnected');
+                text.textContent = 'Disconnected - Reconnecting...';
+            }
+        }
+
+        function handleRealTimeUpdate(data) {
+            if (data.type === 'prediction_update') {
+                showMessage(`🔄 ${data.market} predictions updated (Confidence: ${data.confidence}%)`, 'success');
+                
+                // Update prediction card if visible
+                const marketCard = document.querySelector(`[data-market="${data.market}"]`);
+                if (marketCard) {
+                    const confidenceBar = marketCard.querySelector('.confidence-fill');
+                    if (confidenceBar) {
+                        confidenceBar.style.width = `${data.confidence}%`;
+                    }
+                }
+            }
+        }
+
+        // Section navigation
+        function showSection(sectionName) {
+            // Update active tab
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionName).classList.add('active');
+            currentSection = sectionName;
+            
+            // Load section-specific data
+            if (sectionName === 'analytics') {
+                loadAnalytics();
+            } else if (sectionName === 'preferences') {
+                loadPreferences();
+            } else if (sectionName === 'results') {
+                loadResults();
+            }
+        }
+
+        // Enhanced prediction loading
+        function loadPredictions() {
+            showLoading(true, 'Generating advanced predictions...');
+            
+            fetch('/api/predictions')
+                .then(response => response.json())
+                .then(data => {
+                    showLoading(false);
+                    if (data.success) {
+                        displayEnhancedPredictions(data);
+                        showMessage('🎯 Advanced predictions generated successfully!', 'success');
+                    } else {
+                        showMessage(`❌ Error: ${data.error}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    showLoading(false);
+                    showMessage(`🌐 Network error: ${error.message}`, 'error');
+                });
+        }
+
+        function displayEnhancedPredictions(data) {
+            const grid = document.getElementById('predictionsGrid');
+            grid.innerHTML = '';
+            
+            data.predictions.forEach((pred, index) => {
+                const card = document.createElement('div');
+                card.className = 'market-card';
+                card.setAttribute('data-market', pred.market);
+                card.style.animationDelay = `${index * 0.1}s`;
+                
+                if (pred.status === 'error') {
+                    card.innerHTML = `
+                        <div class="market-name">${pred.market}</div>
+                        <div style="color: #f44336; text-align: center; padding: 20px;">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i><br>
+                            ${pred.message}
+                        </div>
+                    `;
+                } else {
+                    const confidence = pred.confidence || 0;
+                    const hotNumbers = pred.hot_numbers || [];
+                    
+                    card.innerHTML = `
+                        <div class="market-name">${pred.market}</div>
+                        
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" style="width: ${confidence}%"></div>
+                        </div>
+                        <div class="confidence-text">AI Confidence: ${confidence}%</div>
+                        
+                        <div style="margin: 20px 0;">
+                            <div style="display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 10px;">
+                                <span style="color: var(--text-secondary);"><i class="fas fa-door-open"></i> Open:</span>
+                                <span style="color: var(--text-primary); font-weight: 600;">${pred.open?.join(', ') || 'N/A'}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 10px;">
+                                <span style="color: var(--text-secondary);"><i class="fas fa-door-closed"></i> Close:</span>
+                                <span style="color: var(--text-primary); font-weight: 600;">${pred.close?.join(', ') || 'N/A'}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 10px;">
+                                <span style="color: var(--text-secondary);"><i class="fas fa-layer-group"></i> Pattis:</span>
+                                <span style="color: var(--text-primary); font-weight: 600;">${pred.pattis?.join(', ') || 'N/A'}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 10px;">
+                                <span style="color: var(--text-secondary);"><i class="fas fa-dice"></i> Jodis:</span>
+                                <span style="color: var(--text-primary); font-weight: 600;">${pred.jodis?.slice(0, 5).join(', ') || 'N/A'}</span>
+                            </div>
+                        </div>
+                        
+                        ${hotNumbers.length > 0 ? `
+                            <div class="pattern-analysis">
+                                <div class="pattern-title">
+                                    <i class="fas fa-fire"></i> Hot Numbers
+                                </div>
+                                <div class="hot-numbers">
+                                    ${hotNumbers.map(num => `<div class="hot-number">${num}</div>`).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    `;
+                }
+                
+                grid.appendChild(card);
+            });
+        }
+
+        // Analytics functions
+        function loadAnalytics() {
+            loadTrendsChart();
+            loadHeatmap();
+        }
+
+        function loadTrendsChart() {
+            const market = document.getElementById('marketSelect')?.value || 'Time Bazar';
+            
+            fetch(`/api/analytics/trends/${market}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const trace1 = {
+                            x: data.dates,
+                            y: data.open_values,
+                            name: 'Open Values',
+                            type: 'scatter',
+                            mode: 'lines+markers',
+                            line: { color: '#4facfe' }
+                        };
+                        
+                        const trace2 = {
+                            x: data.dates,
+                            y: data.close_values,
+                            name: 'Close Values',
+                            type: 'scatter',
+                            mode: 'lines+markers',
+                            line: { color: '#f093fb' }
+                        };
+                        
+                        const trace3 = {
+                            x: data.dates,
+                            y: data.ma_7,
+                            name: '7-Day Moving Average',
+                            type: 'scatter',
+                            mode: 'lines',
+                            line: { color: '#ffd700', dash: 'dash' }
+                        };
+                        
+                        const layout = {
+                            title: `${market} - Trend Analysis`,
+                            paper_bgcolor: 'rgba(0,0,0,0)',
+                            plot_bgcolor: 'rgba(0,0,0,0)',
+                            font: { color: 'white' },
+                            xaxis: { gridcolor: 'rgba(255,255,255,0.1)' },
+                            yaxis: { gridcolor: 'rgba(255,255,255,0.1)' }
+                        };
+                        
+                        Plotly.newPlot('trendsChart', [trace1, trace2, trace3], layout);
+                    }
+                })
+                .catch(error => console.error('Error loading trends:', error));
+        }
+
+        function loadHeatmap() {
+            const market = document.getElementById('marketSelect')?.value || 'Time Bazar';
+            
+            fetch(`/api/analytics/heatmap/${market}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const trace = {
+                            z: data.heatmap_data,
+                            x: data.labels,
+                            y: data.labels,
+                            type: 'heatmap',
+                            colorscale: [
+                                [0, '#000033'],
+                                [0.5, '#667eea'],
+                                [1, '#f093fb']
+                            ]
+                        };
+                        
+                        const layout = {
+                            title: `${market} - Number Frequency Heatmap`,
+                            paper_bgcolor: 'rgba(0,0,0,0)',
+                            plot_bgcolor: 'rgba(0,0,0,0)',
+                            font: { color: 'white' },
+                            xaxis: { title: 'Numbers' },
+                            yaxis: { title: 'Numbers' }
+                        };
+                        
+                        Plotly.newPlot('heatmapChart', [trace], layout);
+                    }
+                })
+                .catch(error => console.error('Error loading heatmap:', error));
+        }
+
+        // Profit/Loss Calculator
+        function calculateProfitLoss() {
+            const prediction = document.getElementById('predictionInput').value;
+            const actual = document.getElementById('actualInput').value;
+            const betAmount = parseFloat(document.getElementById('betAmountInput').value) || 100;
+            
+            if (!prediction || !actual) {
+                showMessage('Please enter both prediction and actual result', 'error');
+                return;
+            }
+            
+            fetch('/api/profit-loss-calculator', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    predictions: [prediction],
+                    actuals: [actual],
+                    bet_amounts: [betAmount]
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayCalculatorResults(data);
+                } else {
+                    showMessage('Error calculating profit/loss', 'error');
+                }
+            })
+            .catch(error => {
+                showMessage('Network error', 'error');
+            });
+        }
+
+        function displayCalculatorResults(data) {
+            const resultsDiv = document.getElementById('calculatorResults');
+            const result = data.results[0];
+            
+            resultsDiv.innerHTML = `
+                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; margin-top: 20px;">
+                    <h4 style="color: var(--text-primary); margin-bottom: 15px;">Results</h4>
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                        <span>Prediction:</span>
+                        <span style="font-weight: 600;">${result.prediction}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                        <span>Actual:</span>
+                        <span style="font-weight: 600;">${result.actual}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                        <span>Bet Amount:</span>
+                        <span style="font-weight: 600;">₹${result.bet_amount}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <span>Result:</span>
+                        <span style="font-weight: 600; color: ${result.result === 'WIN' ? 'var(--success-color)' : 'var(--error-color)'}">${result.result}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin: 10px 0;">
+                        <span>Profit/Loss:</span>
+                        <span style="font-weight: 600; color: ${result.profit_loss > 0 ? 'var(--success-color)' : 'var(--error-color)'}">₹${result.profit_loss}</span>
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.classList.remove('hidden');
+        }
+
+        // User Preferences
+        function loadPreferences() {
+            fetch('/api/user-preferences?user_id=default')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        userPreferences = data.preferences;
+                        displayPreferences();
+                    }
+                })
+                .catch(error => console.error('Error loading preferences:', error));
+        }
+
+        function displayPreferences() {
+            const marketsContainer = document.getElementById('favoriteMarkets');
+            const markets = ["Time Bazar", "Milan Day", "Rajdhani Day", "Kalyan", "Milan Night", "Rajdhani Night", "Main Bazar"];
+            
+            marketsContainer.innerHTML = '';
+            markets.forEach(market => {
+                const isChecked = userPreferences.favorite_markets.includes(market);
+                const checkboxItem = document.createElement('div');
+                checkboxItem.className = 'checkbox-item';
+                checkboxItem.innerHTML = `
+                    <input type="checkbox" id="market_${market.replace(/\s+/g, '_')}" ${isChecked ? 'checked' : ''}>
+                    <label for="market_${market.replace(/\s+/g, '_')}">${market}</label>
+                `;
+                marketsContainer.appendChild(checkboxItem);
+            });
+            
+            // Set notification settings
+            document.getElementById('notifyResults').checked = userPreferences.notification_settings.results || false;
+            document.getElementById('notifyPredictions').checked = userPreferences.notification_settings.predictions || false;
+            document.getElementById('notifyUpdates').checked = userPreferences.notification_settings.updates || false;
+        }
+
+        function savePreferences() {
+            const favoriteMarkets = [];
+            document.querySelectorAll('#favoriteMarkets input[type="checkbox"]:checked').forEach(checkbox => {
+                const marketName = checkbox.nextElementSibling.textContent;
+                favoriteMarkets.push(marketName);
+            });
+            
+            const notificationSettings = {
+                results: document.getElementById('notifyResults').checked,
+                predictions: document.getElementById('notifyPredictions').checked,
+                updates: document.getElementById('notifyUpdates').checked
+            };
+            
+            fetch('/api/user-preferences', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_id: 'default',
+                    favorite_markets: favoriteMarkets,
+                    notification_settings: notificationSettings
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('✅ Preferences saved successfully!', 'success');
+                    userPreferences.favorite_markets = favoriteMarkets;
+                    userPreferences.notification_settings = notificationSettings;
+                } else {
+                    showMessage('❌ Error saving preferences', 'error');
+                }
+            })
+            .catch(error => {
+                showMessage('🌐 Network error', 'error');
+            });
+        }
+
+        // Results loading
+        function loadResults() {
+            showLoading(true, 'Loading today\'s results...');
+            
+            fetch('/api/today-results')
+                .then(response => response.json())
+                .then(data => {
+                    showLoading(false);
+                    if (data.success) {
+                        displayResults(data);
+                        showMessage('📊 Results loaded successfully!', 'success');
+                    } else {
+                        showMessage(`❌ Error: ${data.error}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    showLoading(false);
+                    showMessage(`🌐 Network error: ${error.message}`, 'error');
+                });
+        }
+
+        function displayResults(data) {
+            const grid = document.getElementById('resultsGrid');
+            grid.innerHTML = '';
+            
+            if (data.results.length === 0) {
+                grid.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 40px; font-size: 1.2rem;"><i class="fas fa-info-circle"></i> No results available for today</div>';
+                return;
+            }
+            
+            data.results.forEach((result, index) => {
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                card.style.animationDelay = `${index * 0.1}s`;
+                
+                const prediction = result.prediction;
+                const matches = result.matches;
+                
+                card.innerHTML = `
+                    <div class="market-name">${result.market}</div>
+                    <div style="margin: 20px 0;">
+                        <div style="display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 10px;">
+                            <span style="color: var(--text-secondary);"><i class="fas fa-bullseye"></i> Actual Open:</span>
+                            <span style="color: var(--text-primary); font-weight: 600;">${result.actual.open}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 10px;">
+                            <span style="color: var(--text-secondary);"><i class="fas fa-bullseye"></i> Actual Close:</span>
+                            <span style="color: var(--text-primary); font-weight: 600;">${result.actual.close}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 10px;">
+                            <span style="color: var(--text-secondary);"><i class="fas fa-bullseye"></i> Actual Jodi:</span>
+                            <span style="color: var(--text-primary); font-weight: 600;">${result.actual.jodi}</span>
+                        </div>
+                    </div>
+                    
+                    ${prediction ? `
+                        <hr style="margin: 20px 0; border: 1px solid rgba(255,255,255,0.1);">
+                        <div style="margin: 20px 0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 10px;">
+                                <span style="color: var(--text-secondary);"><i class="fas fa-check-circle"></i> Open Match:</span>
+                                <span style="color: ${matches.open ? 'var(--success-color)' : 'var(--error-color)'}; font-weight: 600;">
+                                    ${matches.open ? '✅ YES' : '❌ NO'}
+                                </span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 10px;">
+                                <span style="color: var(--text-secondary);"><i class="fas fa-check-circle"></i> Close Match:</span>
+                                <span style="color: ${matches.close ? 'var(--success-color)' : 'var(--error-color)'}; font-weight: 600;">
+                                    ${matches.close ? '✅ YES' : '❌ NO'}
+                                </span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 10px;">
+                                <span style="color: var(--text-secondary);"><i class="fas fa-check-circle"></i> Jodi Match:</span>
+                                <span style="color: ${matches.jodi ? 'var(--success-color)' : 'var(--error-color)'}; font-weight: 600;">
+                                    ${matches.jodi ? '✅ YES' : '❌ NO'}
+                                </span>
+                            </div>
+                        </div>
+                    ` : '<div style="text-align: center; color: var(--text-secondary); padding: 20px;"><i class="fas fa-question-circle"></i> No prediction available</div>'}
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        // Export functionality
+        function exportData(dataType) {
+            window.open(`/api/export/csv/${dataType}`, '_blank');
+        }
+
+        // Utility functions
+        function showLoading(show, text = 'Loading...') {
             const loadingEl = document.getElementById('loading');
             const textEl = document.getElementById('loadingText');
             loadingEl.classList.toggle('hidden', !show);
             if (textEl) textEl.textContent = text;
-
-            // Add pulsing effect to buttons when loading
-            const buttons = document.querySelectorAll('.btn');
-            buttons.forEach(btn => {
-                btn.style.pointerEvents = show ? 'none' : 'auto';
-                btn.style.opacity = show ? '0.7' : '1';
-            });
         }
 
         function showMessage(text, type) {
@@ -626,392 +1146,29 @@
             messageEl.textContent = text;
             messageEl.className = `message ${type}`;
             messageEl.classList.remove('hidden');
-
-            // Auto-hide message after 5 seconds with fade out
+            
             setTimeout(() => {
-                messageEl.style.opacity = '0';
-                messageEl.style.transform = 'translateX(100px)';
-                setTimeout(() => {
-                    messageEl.classList.add('hidden');
-                    messageEl.style.opacity = '1';
-                    messageEl.style.transform = 'translateX(0)';
-                }, 300);
+                messageEl.classList.add('hidden');
             }, 5000);
         }
 
-        function hideAllSections() {
-            const sections = ['predictions', 'todayResults', 'performance'];
-            sections.forEach(sectionId => {
-                const section = document.getElementById(sectionId);
-                section.style.opacity = '0';
-                section.style.transform = 'translateY(20px)';
-                setTimeout(() => {
-                    section.classList.add('hidden');
-                }, 300);
-            });
-        }
-
-        function showSection(sectionId) {
-            const section = document.getElementById(sectionId);
-            section.classList.remove('hidden');
-            setTimeout(() => {
-                section.style.opacity = '1';
-                section.style.transform = 'translateY(0)';
-            }, 50);
-        }
-
-        function loadPredictions() {
-            showLoading(true);
-            hideAllSections();
-
-            fetch('/api/predictions')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    showLoading(false);
-                    if (data.success) {
-                        displayPredictions(data);
-                        if (data.cached) {
-                            showMessage('⚡ Cached predictions loaded instantly!', 'success');
-                            showCacheStatus(true);
-                        } else {
-                            showMessage('🎯 Fresh predictions generated successfully!', 'success');
-                        }
-                    } else {
-                        showMessage(`❌ Error: ${data.error || 'Unknown error'}`, 'error');
-                    }
-                })
-                .catch(error => {
-                    showLoading(false);
-                    console.error('Prediction load error:', error);
-                    showMessage(`🌐 Network error: ${error.message}`, 'error');
-                });
-        }
-
-        function displayPredictions(data) {
-            try {
-                document.getElementById('predictionDate').textContent = data.date || 'Unknown Date';
-                const grid = document.getElementById('predictionsGrid');
-                grid.innerHTML = '';
-
-                if (!data.predictions || data.predictions.length === 0) {
-                    grid.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 40px; font-size: 1.2rem;"><i class="fas fa-info-circle"></i> No predictions available</div>';
-                    showSection('predictions');
-                    return;
-                }
-
-                data.predictions.forEach((pred, index) => {
-                    const card = document.createElement('div');
-                    card.className = 'market-card';
-                    card.style.animationDelay = `${index * 0.1}s`;
-
-                    if (pred.status === 'error') {
-                        card.innerHTML = `
-                            <div class="market-name">${pred.market || 'Unknown Market'}</div>
-                            <div style="color: #f44336; text-align: center; padding: 20px;">
-                                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i><br>
-                                ${pred.message || 'Prediction error'}
-                            </div>
-                        `;
-                    } else {
-                        const openVals = Array.isArray(pred.open) ? pred.open : [];
-                        const closeVals = Array.isArray(pred.close) ? pred.close : [];
-                        const pattis = Array.isArray(pred.pattis) ? pred.pattis : [];
-                        const jodis = Array.isArray(pred.jodis) ? pred.jodis : [];
-
-                        card.innerHTML = `
-                            <div class="market-name">${pred.market || 'Unknown Market'}</div>
-                            <div class="prediction-row">
-                                <span class="prediction-label"><i class="fas fa-door-open"></i> Open:</span>
-                                <span class="prediction-value">${openVals.join(', ') || 'N/A'}</span>
-                            </div>
-                            <div class="prediction-row">
-                                <span class="prediction-label"><i class="fas fa-door-closed"></i> Close:</span>
-                                <span class="prediction-value">${closeVals.join(', ') || 'N/A'}</span>
-                            </div>
-                            <div class="prediction-row">
-                                <span class="prediction-label"><i class="fas fa-layer-group"></i> Pattis:</span>
-                                <span class="prediction-value">${pattis.join(', ') || 'N/A'}</span>
-                            </div>
-                            <div class="prediction-row">
-                                <span class="prediction-label"><i class="fas fa-dice"></i> Top Jodis:</span>
-                                <span class="prediction-value">${jodis.slice(0, 5).join(', ') || 'N/A'}</span>
-                            </div>
-                        `;
-                    }
-                    grid.appendChild(card);
-                });
-
-                showSection('predictions');
-            } catch (error) {
-                console.error('Error displaying predictions:', error);
-                showMessage('Error displaying predictions', 'error');
-            }
-        }
-
-        async function generatePredictions() {
-            showLoading(true, 'Generating new predictions...');
-            try {
-                const response = await fetch('/api/generate-predictions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                const data = await response.json();
-
-                if (data.success) {
-                    showMessage(`🎉 ${data.message} (${data.count} markets)`, 'success');
-                    setTimeout(() => loadPredictions(), 1000);
-                } else {
-                    showMessage(`❌ Error generating predictions: ${data.error}`, 'error');
-                }
-            } catch (error) {
-                showMessage(`🌐 Network error: ${error.message}`, 'error');
-            } finally {
-                showLoading(false);
-            }
-        }
-
-        function loadTodayResults() {
-            showLoading(true, 'Loading today\'s results...');
-            hideAllSections();
-
-            fetch('/api/today-results')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    showLoading(false);
-                    if (data.success) {
-                        displayTodayResults(data);
-                        showMessage('📊 Results loaded successfully!', 'success');
-                    } else {
-                        showMessage(`❌ Error: ${data.error || 'No results available'}`, 'error');
-                    }
-                })
-                .catch(error => {
-                    showLoading(false);
-                    console.error('Results load error:', error);
-                    showMessage(`🌐 Network error: ${error.message}`, 'error');
-                });
-        }
-
-        function displayTodayResults(data) {
-            document.getElementById('resultsDate').textContent = data.date;
-            const grid = document.getElementById('resultsGrid');
-            grid.innerHTML = '';
-
-            if (data.results.length === 0) {
-                grid.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 40px; font-size: 1.2rem;"><i class="fas fa-info-circle"></i> No results available for today</div>';
-            }
-
-            data.results.forEach((result, index) => {
-                const card = document.createElement('div');
-                card.className = 'result-card';
-                card.style.animationDelay = `${index * 0.1}s`;
-
-                const prediction = result.prediction;
-                const matches = result.matches;
-
-                card.innerHTML = `
-                    <div class="market-name">${result.market}</div>
-                    <div class="prediction-row">
-                        <span class="prediction-label"><i class="fas fa-bullseye"></i> Actual Open:</span>
-                        <span class="prediction-value">${result.actual.open}</span>
-                    </div>
-                    <div class="prediction-row">
-                        <span class="prediction-label"><i class="fas fa-bullseye"></i> Actual Close:</span>
-                        <span class="prediction-value">${result.actual.close}</span>
-                    </div>
-                    <div class="prediction-row">
-                        <span class="prediction-label"><i class="fas fa-bullseye"></i> Actual Jodi:</span>
-                        <span class="prediction-value">${result.actual.jodi}</span>
-                    </div>
-                    ${prediction ? `
-                        <hr style="margin: 20px 0; border: 1px solid rgba(255,255,255,0.1);">
-                        <div class="prediction-row">
-                            <span class="prediction-label"><i class="fas fa-check-circle"></i> Open Match:</span>
-                            <span class="prediction-value">
-                                ${matches.open ? '✅ YES' : '❌ NO'}
-                                <span class="match-indicator ${matches.open ? 'match-true' : 'match-false'}"></span>
-                            </span>
-                        </div>
-                        <div class="prediction-row">
-                            <span class="prediction-label"><i class="fas fa-check-circle"></i> Close Match:</span>
-                            <span class="prediction-value">
-                                ${matches.close ? '✅ YES' : '❌ NO'}
-                                <span class="match-indicator ${matches.close ? 'match-true' : 'match-false'}"></span>
-                            </span>
-                        </div>
-                        <div class="prediction-row">
-                            <span class="prediction-label"><i class="fas fa-check-circle"></i> Jodi Match:</span>
-                            <span class="prediction-value">
-                                ${matches.jodi ? '✅ YES' : '❌ NO'}
-                                <span class="match-indicator ${matches.jodi ? 'match-true' : 'match-false'}"></span>
-                            </span>
-                        </div>
-                        <div class="prediction-row">
-                            <span class="prediction-label"><i class="fas fa-check-circle"></i> Patti Match:</span>
-                            <span class="prediction-value">
-                                ${matches.patti ? '✅ YES' : '❌ NO'}
-                                <span class="match-indicator ${matches.patti ? 'match-true' : 'match-false'}"></span>
-                            </span>
-                        </div>
-                    ` : '<div style="text-align: center; color: var(--text-secondary); padding: 20px;"><i class="fas fa-question-circle"></i> No prediction available</div>'}
-                `;
-                grid.appendChild(card);
-            });
-
-            showSection('todayResults');
-        }
-
-        function loadPerformance() {
-            showLoading(true, 'Loading performance analytics...');
-            hideAllSections();
-
-            fetch('/api/performance')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    showLoading(false);
-                    if (data.success) {
-                        displayPerformance(data.stats);
-                        showMessage('📈 Performance data loaded!', 'success');
-                    } else {
-                        showMessage(`❌ Error: ${data.error || 'Performance data unavailable'}`, 'error');
-                    }
-                })
-                .catch(error => {
-                    showLoading(false);
-                    console.error('Performance load error:', error);
-                    showMessage(`🌐 Network error: ${error.message}`, 'error');
-                });
-        }
-
-        function displayPerformance(stats) {
-            const content = document.getElementById('performanceContent');
-            content.innerHTML = `
-                <div class="stat-row">
-                    <span><i class="fas fa-chart-pie"></i> Total Predictions:</span>
-                    <span><strong>${stats.total_predictions}</strong></span>
-                </div>
-                <div class="stat-row">
-                    <span><i class="fas fa-store"></i> Markets Covered:</span>
-                    <span><strong>${stats.markets_covered}</strong></span>
-                </div>
-                <div class="stat-row">
-                    <span><i class="fas fa-trophy"></i> Best Market:</span>
-                    <span><strong>${stats.best_performing_market.market} (${stats.best_performing_market.accuracy.toFixed(1)}%)</strong></span>
-                </div>
-                <div class="stat-row">
-                    <span><i class="fas fa-brain"></i> Model Confidence:</span>
-                    <span><strong>${stats.prediction_confidence.model_confidence}%</strong></span>
-                </div>
-                <div class="stat-row">
-                    <span><i class="fas fa-wave-square"></i> Pattern Strength:</span>
-                    <span><strong>${stats.prediction_confidence.pattern_strength}%</strong></span>
-                </div>
-                <div class="stat-row">
-                    <span><i class="fas fa-bullseye"></i> Overall Confidence:</span>
-                    <span><strong>${stats.prediction_confidence.overall_confidence}%</strong></span>
-                </div>
-            `;
-
-            showSection('performance');
-        }
-
-        function showCacheStatus(isCached) {
-            const btn = document.querySelector('.btn-primary');
-            if (isCached) {
-                btn.innerHTML = '<i class="fas fa-bolt"></i> Predictions (Cached)';
-                btn.classList.add('cached');
-            } else {
-                btn.innerHTML = '<i class="fas fa-crystal-ball"></i> Load Predictions';
-                btn.classList.remove('cached');
-            }
-        }
-
-        // Enhanced page load animation
+        // Initialize application
         document.addEventListener('DOMContentLoaded', function() {
-            // Add entrance animations and auto-load predictions
+            initializeSocket();
+            loadPreferences();
+            
+            // Auto-load predictions on page load
             setTimeout(() => {
-                console.log('Auto-loading predictions...');
                 loadPredictions();
-            }, 500);
-
-            // Add parallax effect on scroll
-            window.addEventListener('scroll', function() {
-                const scrolled = window.pageYOffset;
-                const parallax = document.querySelector('body::before');
-                if (parallax) {
-                    parallax.style.transform = `translateY(${scrolled * 0.5}px)`;
+            }, 1000);
+            
+            // Auto-refresh predictions every 30 minutes
+            setInterval(() => {
+                if (currentSection === 'predictions') {
+                    loadPredictions();
                 }
-            });
-
-            // Add global error handler
-            window.addEventListener('unhandledrejection', function(event) {
-                console.error('Unhandled promise rejection:', event.reason);
-                showMessage('Application error occurred. Please refresh the page.', 'error');
-                event.preventDefault();
-            });
+            }, 30 * 60 * 1000);
         });
-
-        // Add ripple effect to buttons
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('btn')) {
-                const button = e.target;
-                const ripple = document.createElement('span');
-                const rect = button.getBoundingClientRect();
-                const size = Math.max(rect.width, rect.height);
-                const x = e.clientX - rect.left - size / 2;
-                const y = e.clientY - rect.top - size / 2;
-
-                ripple.style.cssText = `
-                    position: absolute;
-                    width: ${size}px;
-                    height: ${size}px;
-                    left: ${x}px;
-                    top: ${y}px;
-                    background: rgba(255, 255, 255, 0.3);
-                    border-radius: 50%;
-                    transform: scale(0);
-                    animation: ripple 0.6s ease-out;
-                    pointer-events: none;
-                `;
-
-                button.style.position = 'relative';
-                button.style.overflow = 'hidden';
-                button.appendChild(ripple);
-
-                setTimeout(() => {
-                    ripple.remove();
-                }, 600);
-            }
-        });
-
-        // Add CSS for ripple animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes ripple {
-                to {
-                    transform: scale(2);
-                    opacity: 0;
-                }
-            }
-        `;
-        document.head.appendChild(style);
     </script>
 </body>
 </html>
