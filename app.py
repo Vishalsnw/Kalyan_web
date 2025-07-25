@@ -1,10 +1,10 @@
 from flask import Flask, render_template, jsonify
 import pandas as pd
 import numpy as np
+import os
 from datetime import datetime, timedelta
 from sklearn.ensemble import RandomForestClassifier
 import warnings
-import os
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -233,6 +233,13 @@ def index():
 @app.route('/api/predictions')
 def get_predictions():
     try:
+        # Check if data file exists
+        if not os.path.exists(DATA_FILE):
+            return jsonify({
+                "success": False,
+                "error": "Data file not found. Please ensure satta_data.csv exists."
+            }), 404
+            
         df = load_data()
         prediction_date = next_prediction_date()
         predictions = []
@@ -282,15 +289,19 @@ def get_today_results():
         # Load actual results
         try:
             df = pd.read_csv(DATA_FILE)
+            df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
             df = df[df['Date'] == today]
-        except:
+        except Exception as e:
+            print(f"Error loading actual results: {e}")
             df = pd.DataFrame()
 
         # Load predictions
         try:
             pred_df = pd.read_csv(PRED_FILE)
+            pred_df['Date'] = pd.to_datetime(pred_df['Date'], dayfirst=True, errors='coerce').dt.strftime('%d/%m/%Y')
             pred_df = pred_df[pred_df['Date'] == today]
-        except:
+        except Exception as e:
+            print(f"Error loading predictions: {e}")
             pred_df = pd.DataFrame()
 
         results = []
