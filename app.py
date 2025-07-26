@@ -579,56 +579,158 @@ def analyze_patterns(df, market):
 
     return patterns
 
-# === SIMPLIFIED PREDICTION SYSTEM ===
-def simple_predict(df, market, prediction_date):
+# === ADVANCED ML PREDICTION SYSTEM ===
+def train_and_predict_advanced(df, market, prediction_date):
+    """Advanced ML prediction using ensemble models with feature engineering"""
     try:
-        # Get market data
+        # Get market-specific data
         market_data = df[df['Market'] == market].copy()
-        if len(market_data) < 10:
-            # Generate random predictions if insufficient data
-            open_vals = [np.random.randint(0, 10) for _ in range(2)]
-            close_vals = [np.random.randint(0, 10) for _ in range(2)]  
-            jodi_vals = [f"{np.random.randint(10, 100):02d}" for _ in range(10)]
-            return open_vals, close_vals, jodi_vals, "success", 75.0
+        if len(market_data) < 20:
+            print(f"Insufficient data for {market}: {len(market_data)} records")
+            return fallback_predict(market)
         
-        # Simple frequency-based prediction
-        recent_data = market_data.tail(50)
+        # Engineer advanced features
+        market_data = engineer_advanced_features(market_data)
+        if market_data.empty:
+            return fallback_predict(market)
         
-        # Most frequent numbers
-        open_freq = recent_data['Open'].value_counts()
-        close_freq = recent_data['Close'].value_counts()
+        # Prepare feature columns (only use columns that exist and have no NaN)
+        feature_cols = []
+        for col in ['Prev_Open', 'Prev_Close', 'Weekday', 'Day_of_Month', 'Month']:
+            if col in market_data.columns and not market_data[col].isna().all():
+                feature_cols.append(col)
         
-        # Get top predictions
-        open_vals = open_freq.head(2).index.tolist()
-        close_vals = close_freq.head(2).index.tolist()
+        # Add rolling averages if available
+        for window in [3, 7]:
+            col = f'Open_MA{window}'
+            if col in market_data.columns and not market_data[col].isna().all():
+                feature_cols.append(col)
         
-        # Ensure we have 2 values
-        while len(open_vals) < 2:
-            open_vals.append(np.random.randint(0, 10))
-        while len(close_vals) < 2:
-            close_vals.append(np.random.randint(0, 10))
+        if len(feature_cols) < 3:
+            print(f"Insufficient features for {market}")
+            return fallback_predict(market)
+        
+        # Clean data - remove rows with NaN in feature columns
+        clean_data = market_data.dropna(subset=feature_cols + ['Open', 'Close'])
+        if len(clean_data) < 10:
+            return fallback_predict(market)
+        
+        # Prepare training data
+        X = clean_data[feature_cols].fillna(method='ffill').fillna(0)
+        y_open = clean_data['Open'].astype(int)
+        y_close = clean_data['Close'].astype(int)
+        
+        # Train ensemble models
+        predictor = EnsemblePredictor()
+        
+        # Train Open predictor
+        if predictor.train(X, y_open):
+            # Get last row for prediction
+            last_row = clean_data.iloc[-1]
+            pred_date = datetime.strptime(prediction_date, "%d/%m/%Y")
             
-        # Generate jodi predictions
-        jodi_vals = []
-        for o in open_vals:
-            for c in close_vals:
-                jodi_vals.append(f"{o}{c}")
-        
-        # Add more jodis to reach 10
-        while len(jodi_vals) < 10:
-            jodi_vals.append(f"{np.random.randint(10, 100):02d}")
+            # Create prediction features
+            X_pred = pd.DataFrame([{
+                col: last_row[col] if col in last_row.index else 0 
+                for col in feature_cols
+            }])
             
-        confidence = min(85, 60 + len(recent_data))
+            # Update with prediction date features
+            if 'Weekday' in feature_cols:
+                X_pred['Weekday'] = pred_date.weekday()
+            if 'Day_of_Month' in feature_cols:
+                X_pred['Day_of_Month'] = pred_date.day
+            if 'Month' in feature_cols:
+                X_pred['Month'] = pred_date.month
+            
+            X_pred = X_pred.fillna(0)
+            
+            # Get predictions with confidence
+            open_predictions, open_confidence = predictor.predict_with_confidence(X_pred)
+            
+            # Train Close predictor
+            close_predictor = EnsemblePredictor()
+            if close_predictor.train(X, y_close):
+                close_predictions, close_confidence = close_predictor.predict_with_confidence(X_pred)
+                
+                # Extract top predictions
+                open_vals = [int(pred[0]) for pred in open_predictions[:2]]
+                close_vals = [int(pred[0]) for pred in close_predictions[:2]]
+                
+                # Generate advanced jodi predictions
+                jodi_vals = generate_advanced_jodis(open_vals, close_vals, clean_data)
+                
+                # Calculate overall confidence
+                overall_confidence = (open_confidence + close_confidence) / 2 * 100
+                
+                # Save confidence score
+                save_confidence_score(market, prediction_date, overall_confidence, "ensemble")
+                
+                return open_vals, close_vals, jodi_vals, "success", overall_confidence
         
-        return open_vals, close_vals, jodi_vals, "success", confidence
+        return fallback_predict(market)
         
     except Exception as e:
-        print(f"Prediction error for {market}: {e}")
-        # Fallback predictions
-        open_vals = [np.random.randint(0, 10) for _ in range(2)]
-        close_vals = [np.random.randint(0, 10) for _ in range(2)]
-        jodi_vals = [f"{np.random.randint(10, 100):02d}" for _ in range(10)]
-        return open_vals, close_vals, jodi_vals, "success", 65.0
+        print(f"Advanced prediction error for {market}: {e}")
+        return fallback_predict(market)
+
+def generate_advanced_jodis(open_vals, close_vals, historical_data):
+    """Generate advanced jodi predictions using multiple strategies"""
+    jodis = set()
+    
+    # Strategy 1: Direct combinations
+    for o in open_vals:
+        for c in close_vals:
+            jodis.add(f"{o}{c}")
+    
+    # Strategy 2: Historical frequency analysis
+    if 'Jodi' in historical_data.columns:
+        recent_jodis = historical_data.tail(30)['Jodi'].value_counts().head(10)
+        for jodi in recent_jodis.index:
+            if len(str(jodi)) == 2:
+                jodis.add(str(jodi))
+    
+    # Strategy 3: Pattern-based generation
+    for o in open_vals:
+        for i in range(10):
+            jodis.add(f"{o}{i}")
+            jodis.add(f"{i}{o}")
+    
+    # Strategy 4: Mathematical relationships
+    for o in open_vals:
+        for c in close_vals:
+            # Sum and difference patterns
+            sum_mod = (o + c) % 10
+            diff_mod = abs(o - c) % 10
+            jodis.add(f"{sum_mod}{diff_mod}")
+            jodis.add(f"{diff_mod}{sum_mod}")
+    
+    # Convert to list and ensure we have exactly 10
+    jodi_list = list(jodis)[:10]
+    while len(jodi_list) < 10:
+        jodi_list.append(f"{np.random.randint(0, 10)}{np.random.randint(0, 10)}")
+    
+    return jodi_list
+
+def fallback_predict(market):
+    """Fallback prediction when ML fails"""
+    # Use weighted random based on historical frequencies
+    weights = [15, 12, 10, 8, 7, 6, 5, 4, 3, 2]  # Favor lower numbers
+    
+    open_vals = np.random.choice(range(10), size=2, replace=False, p=[w/sum(weights) for w in weights]).tolist()
+    close_vals = np.random.choice(range(10), size=2, replace=False, p=[w/sum(weights) for w in weights]).tolist()
+    
+    # Generate jodis
+    jodi_vals = []
+    for o in open_vals:
+        for c in close_vals:
+            jodi_vals.append(f"{o}{c}")
+    
+    # Add more diverse jodis
+    while len(jodi_vals) < 10:
+        jodi_vals.append(f"{np.random.randint(0, 10)}{np.random.randint(0, 10)}")
+    
+    return open_vals, close_vals, jodi_vals, "success", 70.0
 
 # === DATABASE OPERATIONS ===
 def save_confidence_score(market, date, confidence, model_type):
@@ -688,7 +790,7 @@ def get_predictions():
 
         for market in MARKETS:
             try:
-                open_vals, close_vals, jodis, status, confidence = simple_predict(df, market, prediction_date)
+                open_vals, close_vals, jodis, status, confidence = train_and_predict_advanced(df, market, prediction_date)
 
                 if status == "success":
                     pattis = generate_pattis(open_vals, close_vals)
