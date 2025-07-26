@@ -1,4 +1,3 @@
-
 import os
 import json
 import pandas as pd
@@ -38,7 +37,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 def init_database():
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
-    
+
     # User preferences table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS user_preferences (
@@ -49,7 +48,7 @@ def init_database():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-    
+
     # Prediction confidence table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS prediction_confidence (
@@ -61,7 +60,7 @@ def init_database():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-    
+
     # Performance tracking table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS performance_tracking (
@@ -76,7 +75,7 @@ def init_database():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-    
+
     conn.commit()
     conn.close()
 
@@ -90,13 +89,13 @@ class EnsemblePredictor:
         }
         self.ensemble = None
         self.confidence_scores = {}
-    
+
     def train(self, X, y):
         try:
             # Individual model training
             for name, model in self.models.items():
                 model.fit(X, y)
-            
+
             # Ensemble model
             self.ensemble = VotingClassifier(
                 estimators=[(name, model) for name, model in self.models.items()],
@@ -107,23 +106,23 @@ class EnsemblePredictor:
         except Exception as e:
             print(f"Model training error: {e}")
             return False
-    
+
     def predict_with_confidence(self, X):
         if self.ensemble is None:
             return None, 0.0
-        
+
         # Get predictions and probabilities
         prediction = self.ensemble.predict(X)[0]
         probabilities = self.ensemble.predict_proba(X)[0]
-        
+
         # Calculate confidence as max probability
         confidence = np.max(probabilities)
-        
+
         # Get top predictions with probabilities
         classes = self.ensemble.classes_
         top_indices = np.argsort(probabilities)[-5:][::-1]
         top_predictions = [(classes[i], probabilities[i]) for i in top_indices]
-        
+
         return top_predictions, confidence
 
 # === ANALYTICS API ENDPOINTS ===
@@ -166,7 +165,7 @@ def analytics_performance():
                     'name': str(market),
                     'accuracy': 65.0
                 })
-        
+
         return jsonify({
             'success': True,
             'markets': markets
@@ -184,11 +183,11 @@ def analytics_heatmap():
     try:
         # Calculate number frequency from historical data
         frequency = {}
-        
+
         # Initialize with default values
         for i in range(10):
             frequency[str(i)] = 15 + np.random.randint(5, 25)
-        
+
         if os.path.exists(DATA_FILE):
             try:
                 df = load_data()
@@ -200,7 +199,7 @@ def analytics_heatmap():
                         frequency[str(i)] = max(count, 1)  # Ensure non-zero
             except Exception as e:
                 print(f"Error processing heatmap data: {e}")
-        
+
         return jsonify({
             'success': True,
             'frequency': frequency
@@ -220,7 +219,7 @@ def analytics_accuracy_trend():
         # Get last 30 days accuracy trends with realistic data
         np.random.seed(42)  # For consistent data
         base_accuracy = 70
-        
+
         for i in range(30, 0, -1):
             date = (datetime.now() - timedelta(days=i)).strftime('%d/%m/%Y')
             try:
@@ -232,12 +231,12 @@ def analytics_accuracy_trend():
                 accuracy = max(60, min(85, accuracy + variation))
             except Exception as e:
                 accuracy = base_accuracy + np.random.randint(-3, 4)
-            
+
             trends.append({
                 'date': str(date),
                 'accuracy': float(accuracy)
             })
-        
+
         return jsonify({
             'success': True,
             'trends': trends
@@ -259,17 +258,17 @@ def analytics_risk_metrics():
         except Exception as e:
             print(f"Error calculating confidence: {e}")
             confidence = 72.0
-        
+
         # Ensure confidence is a valid number
         if not isinstance(confidence, (int, float)) or np.isnan(confidence):
             confidence = 72.0
-        
+
         # Generate realistic risk distribution
         total_predictions = 100
         high_risk = 18.5
         medium_risk = 56.2
         low_risk = 25.3
-        
+
         metrics = {
             'high_risk': float(high_risk),
             'medium_risk': float(medium_risk),
@@ -277,7 +276,7 @@ def analytics_risk_metrics():
             'confidence': float(confidence),
             'total_predictions': total_predictions
         }
-        
+
         return jsonify({
             'success': True,
             'metrics': metrics
@@ -298,7 +297,7 @@ def calculate_pl():
         bet_type = data.get('bet_type')
         amount = float(data.get('amount', 0))
         numbers = data.get('numbers', '')
-        
+
         # Calculate potential returns based on bet type
         multipliers = {
             'single': 9.5,
@@ -307,13 +306,13 @@ def calculate_pl():
             'half_panel': 180,
             'full_panel': 1400
         }
-        
+
         multiplier = multipliers.get(bet_type, 9.5)
         potential_win = amount * multiplier
         win_probability = calculate_win_probability(bet_type, numbers)
         risk_level = get_risk_level(win_probability)
         net_pl = (potential_win * win_probability / 100) - amount
-        
+
         calculation = {
             'bet_amount': amount,
             'potential_win': potential_win,
@@ -321,12 +320,12 @@ def calculate_pl():
             'risk_level': risk_level,
             'net_pl': round(net_pl, 2)
         }
-        
+
         return jsonify({
             'success': True,
             'calculation': calculation
         })
-        
+
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
@@ -423,34 +422,34 @@ def load_data():
         if not os.path.exists(DATA_FILE):
             print(f"Data file {DATA_FILE} not found")
             return generate_clean_sample_data()
-        
+
         # Read CSV with strict error handling
         try:
             df = pd.read_csv(DATA_FILE, dtype=str, na_values=['', 'nan', 'NaN', 'null'])
         except Exception as e:
             print(f"Error reading CSV: {e}")
             return generate_clean_sample_data()
-        
+
         if df.empty:
             print("Data file is empty")
             return generate_clean_sample_data()
-        
+
         # Required columns check
         required_columns = ["Market", "Date", "Open", "Close", "Jodi"]
         if not all(col in df.columns for col in required_columns):
             print(f"Missing required columns")
             return generate_clean_sample_data()
-        
+
         # Clean data with strict validation
         df_clean = pd.DataFrame()
-        
+
         for _, row in df.iterrows():
             try:
                 # Validate market
                 market = str(row.get('Market', '')).strip()
                 if market not in MARKETS:
                     continue
-                
+
                 # Validate and parse date
                 date_str = str(row.get('Date', '')).strip()
                 try:
@@ -459,7 +458,7 @@ def load_data():
                         continue
                 except:
                     continue
-                
+
                 # Clean Open/Close values - must be single digits 0-9
                 def clean_single_digit(val):
                     val_str = str(val).strip()
@@ -471,13 +470,13 @@ def load_data():
                         if char.isdigit():
                             return int(char) % 10
                     return None
-                
+
                 open_val = clean_single_digit(row.get('Open', ''))
                 close_val = clean_single_digit(row.get('Close', ''))
-                
+
                 if open_val is None or close_val is None:
                     continue
-                
+
                 # Clean Jodi value - must be 2 digits 10-99
                 def clean_jodi(val):
                     val_str = str(val).strip()
@@ -497,11 +496,11 @@ def load_data():
                     elif len(digits) == 1:
                         return f"{int(digits) + 10:02d}"
                     return None
-                
+
                 jodi_val = clean_jodi(row.get('Jodi', ''))
                 if jodi_val is None:
                     continue
-                
+
                 # Add valid row
                 new_row = pd.DataFrame([{
                     'Market': market,
@@ -511,22 +510,22 @@ def load_data():
                     'Jodi': jodi_val
                 }])
                 df_clean = pd.concat([df_clean, new_row], ignore_index=True)
-                
+
             except Exception as e:
                 # Skip corrupted rows
                 continue
-        
+
         if df_clean.empty:
             print("No valid data found after cleaning")
             return generate_clean_sample_data()
-        
+
         # Final type conversion
         df_clean['Open'] = df_clean['Open'].astype(int)
         df_clean['Close'] = df_clean['Close'].astype(int)
-        
+
         print(f"Loaded {len(df_clean)} valid records from {DATA_FILE}")
         return df_clean.reset_index(drop=True)
-        
+
     except Exception as e:
         print(f"Critical error loading data: {e}")
         return generate_clean_sample_data()
@@ -534,10 +533,10 @@ def load_data():
 def generate_clean_sample_data():
     """Generate clean sample data when main data is corrupted"""
     print("Generating clean sample data...")
-    
+
     data = []
     base_date = datetime.now() - timedelta(days=100)
-    
+
     for i in range(100):
         date = base_date + timedelta(days=i)
         if date.weekday() < 6:  # Skip Sundays
@@ -545,7 +544,7 @@ def generate_clean_sample_data():
                 open_val = np.random.randint(0, 10)
                 close_val = np.random.randint(0, 10)
                 jodi_val = f"{np.random.randint(10, 100):02d}"
-                
+
                 data.append({
                     'Market': market,
                     'Date': date,
@@ -553,7 +552,7 @@ def generate_clean_sample_data():
                     'Close': close_val,
                     'Jodi': jodi_val
                 })
-    
+
     df = pd.DataFrame(data)
     print(f"Generated {len(df)} sample records")
     return df
@@ -563,72 +562,72 @@ def validate_data_integrity(df):
     """Validate data integrity and remove corrupted entries"""
     if df.empty:
         return df
-    
+
     # Remove entries with invalid dates
     df = df[df["Date"].notna()]
-    
+
     # Remove entries older than 2 years (likely test data)
     cutoff_date = datetime.now() - timedelta(days=730)
     df = df[df["Date"] >= cutoff_date]
-    
+
     # Ensure all numeric values are within expected ranges
     df = df[(df["Open"] >= 0) & (df["Open"] <= 9)]
     df = df[(df["Close"] >= 0) & (df["Close"] <= 9)]
-    
+
     return df
 
 # === ADVANCED FEATURE ENGINEERING ===
 def engineer_advanced_features(df):
     if df.empty:
         return pd.DataFrame()
-        
+
     df = df.sort_values("Date").copy()
-    
+
     # Basic features
     df["Prev_Open"] = df["Open"].shift(1)
     df["Prev_Close"] = df["Close"].shift(1)
     df["Prev_Jodi"] = df["Jodi"].shift(1)
-    
+
     # Rolling statistics
     for window in [3, 7, 14]:
         df[f"Open_MA{window}"] = df["Open"].rolling(window).mean()
         df[f"Close_MA{window}"] = df["Close"].rolling(window).mean()
         df[f"Open_Std{window}"] = df["Open"].rolling(window).std()
         df[f"Close_Std{window}"] = df["Close"].rolling(window).std()
-    
+
     # Time-based features
     df["Weekday"] = df["Date"].dt.weekday
     df["Day_of_Month"] = df["Date"].dt.day
     df["Week_of_Year"] = df["Date"].dt.isocalendar().week
     df["Month"] = df["Date"].dt.month
     df["Quarter"] = df["Date"].dt.quarter
-    
+
     # Lag features
     for lag in [2, 3, 7]:
         df[f"Open_Lag{lag}"] = df["Open"].shift(lag)
         df[f"Close_Lag{lag}"] = df["Close"].shift(lag)
-    
+
     # Trend features
     df["Open_Trend"] = df["Open"] - df["Open"].shift(1)
     df["Close_Trend"] = df["Close"] - df["Close"].shift(1)
     df["Open_Momentum"] = df["Open"].rolling(3).apply(lambda x: x.iloc[-1] - x.iloc[0])
     df["Close_Momentum"] = df["Close"].rolling(3).apply(lambda x: x.iloc[-1] - x.iloc[0])
-    
+
     # Frequency encoding
     df["Open_Freq"] = df.groupby("Open")["Open"].transform("count")
     df["Close_Freq"] = df.groupby("Close")["Close"].transform("count")
-    
+
     # Pattern features
     df["Is_Weekend_Before"] = (df["Date"].dt.weekday >= 5).astype(int)
     df["Days_Since_Last_Occurrence"] = df.groupby(["Open", "Close"]).cumcount()
-    
+
     return df.dropna()
 
 # === PATTERN ANALYSIS ===
 def analyze_patterns(df, market):
     """Advanced pattern analysis for market trends"""
     market_data = df[df["Market"] == market].tail(100)
-    
+
     patterns = {
         "hot_numbers": {},
         "cold_numbers": {},
@@ -636,13 +635,13 @@ def analyze_patterns(df, market):
         "weekday_patterns": {},
         "monthly_patterns": {}
     }
-    
+
     # Hot and cold number analysis
     all_numbers = list(market_data["Open"]) + list(market_data["Close"])
     number_freq = pd.Series(all_numbers).value_counts()
     patterns["hot_numbers"] = number_freq.head(10).to_dict()
     patterns["cold_numbers"] = number_freq.tail(10).to_dict()
-    
+
     # Weekday patterns
     for day in range(7):
         day_data = market_data[market_data["Date"].dt.weekday == day]
@@ -652,7 +651,7 @@ def analyze_patterns(df, market):
                 "avg_close": day_data["Close"].mean(),
                 "most_frequent": day_data["Jodi"].mode().iloc[0] if not day_data["Jodi"].mode().empty else "00"
             }
-    
+
     # Monthly patterns
     for month in range(1, 13):
         month_data = market_data[market_data["Date"].dt.month == month]
@@ -661,48 +660,48 @@ def analyze_patterns(df, market):
                 "avg_open": month_data["Open"].mean(),
                 "avg_close": month_data["Close"].mean()
             }
-    
+
     return patterns
 
 # === ENHANCED PREDICTION SYSTEM ===
 def train_and_predict_advanced(df, market, prediction_date):
     # Validate data first
     df = validate_data_integrity(df)
-    
+
     # Check if we have any data
     if df.empty:
         print(f"No valid data available for {market}")
         return None, None, None, "No data available", 0.0
-    
+
     df_market = df[df["Market"] == market].copy()
     if len(df_market) < 30:  # Require minimum 30 data points for reliable predictions
         print(f"Insufficient data for {market} - need at least 30 records, have {len(df_market)}")
         return None, None, None, "Insufficient data", 0.0
-    
+
     df_market = engineer_advanced_features(df_market)
     if df_market.empty:
         return None, None, None, "Feature engineering failed", 0.0
-    
+
     # Get pattern analysis
     patterns = analyze_patterns(df, market)
-    
+
     # Feature selection
     feature_cols = [col for col in df_market.columns if col not in ["Date", "Market", "Open", "Close", "Jodi"]]
     available_cols = [col for col in feature_cols if col in df_market.columns and df_market[col].notna().sum() > len(df_market) * 0.5]
-    
+
     if len(available_cols) < 5:
         return None, None, None, "Insufficient features", 0.0
-    
+
     # Ensure X contains only numeric values
     X = df_market[available_cols].fillna(df_market[available_cols].mean())
     # Additional validation to ensure all values are finite
     X = X.replace([np.inf, -np.inf], np.nan).fillna(0)
-    
+
     # Comprehensive target variable validation and cleaning
     def clean_target_column(series, target_type):
         """Clean and validate target columns with comprehensive error handling"""
         cleaned_series = []
-        
+
         for idx, val in series.items():
             try:
                 if target_type in ["Open", "Close"]:
@@ -710,44 +709,43 @@ def train_and_predict_advanced(df, market, prediction_date):
                     if pd.isna(val):
                         cleaned_series.append(np.random.randint(0, 10))
                         continue
-                    
+
                     val_str = str(val).strip()
-                    
-                    # Handle extremely long values
-                    if len(val_str) > 20:
-                        # Use hash for extremely long strings
-                        hash_digit = abs(hash(val_str[:10])) % 10
-                        cleaned_series.append(hash_digit)
+
+                    # Handle extremely long values (prevent memory issues)
+                    if len(val_str) > 10:
+                        # Use position-based deterministic value for very long strings
+                        cleaned_series.append(idx % 10)
                         continue
-                    
-                    # Extract first valid digit
-                    digits = ''.join(c for c in val_str if c.isdigit())
+
+                    # Extract first valid digit from reasonable length strings
+                    digits = ''.join(c for c in val_str[:5] if c.isdigit())
                     if digits:
                         digit = int(digits[0]) % 10
                         cleaned_series.append(digit)
                     else:
                         # Fallback to position-based value
                         cleaned_series.append(idx % 10)
-                        
+
                 elif target_type == "Jodi":
                     # Handle Jodi column (should be 2-digit string)
                     if pd.isna(val):
                         fallback_jodi = f"{np.random.randint(10, 100):02d}"
                         cleaned_series.append(fallback_jodi)
                         continue
-                    
+
                     val_str = str(val).strip()
-                    
+
                     # Handle extremely long values
                     if len(val_str) > 50:
                         # Generate from hash of first 10 characters
                         hash_val = abs(hash(val_str[:10])) % 90 + 10
                         cleaned_series.append(f"{hash_val:02d}")
                         continue
-                    
+
                     # Extract digits
                     digits = ''.join(c for c in val_str if c.isdigit())
-                    
+
                     if len(digits) >= 2:
                         jodi = digits[:2]
                         jodi_int = int(jodi)
@@ -767,7 +765,7 @@ def train_and_predict_advanced(df, market, prediction_date):
                         else:
                             jodi_int = (idx % 90) + 10
                         cleaned_series.append(f"{jodi_int:02d}")
-                        
+
             except (ValueError, TypeError, OverflowError, UnicodeError):
                 # Ultimate fallback based on target type
                 if target_type in ["Open", "Close"]:
@@ -775,30 +773,30 @@ def train_and_predict_advanced(df, market, prediction_date):
                 else:  # Jodi
                     fallback_val = ((idx + 1) * 17 + 31) % 90 + 10
                     cleaned_series.append(f"{fallback_val:02d}")
-        
+
         return pd.Series(cleaned_series, index=series.index)
-    
+
     # Apply comprehensive cleaning
     y_open = clean_target_column(df_market["Open"], "Open").astype(int)
     y_close = clean_target_column(df_market["Close"], "Close").astype(int)
     y_jodi = clean_target_column(df_market["Jodi"], "Jodi")
-    
+
     # Train ensemble models
     predictor_open = EnsemblePredictor()
     predictor_close = EnsemblePredictor()
     predictor_jodi = EnsemblePredictor()
-    
+
     if not all([
         predictor_open.train(X, y_open),
         predictor_close.train(X, y_close),
         predictor_jodi.train(X, y_jodi)
     ]):
         return None, None, None, "Model training failed", 0.0
-    
+
     # Prepare prediction features
     last_row = df_market.iloc[-1]
     pred_date = datetime.strptime(prediction_date, "%d/%m/%Y")
-    
+
     # Build prediction row
     X_pred_dict = {}
     for col in available_cols:
@@ -812,17 +810,17 @@ def train_and_predict_advanced(df, market, prediction_date):
             X_pred_dict[col] = pred_date.month
         else:
             X_pred_dict[col] = df_market[col].mean()
-    
+
     X_pred = pd.DataFrame([X_pred_dict])
-    
+
     # Get predictions with confidence
     open_preds, open_conf = predictor_open.predict_with_confidence(X_pred)
     close_preds, close_conf = predictor_close.predict_with_confidence(X_pred)
     jodi_preds, jodi_conf = predictor_jodi.predict_with_confidence(X_pred)
-    
+
     if not all([open_preds, close_preds, jodi_preds]):
         return None, None, None, "Prediction failed", 0.0
-    
+
     # Extract top predictions with validation
     try:
         # Clean open predictions with strict validation
@@ -857,7 +855,7 @@ def train_and_predict_advanced(df, market, prediction_date):
                 # Fallback: generate deterministic value
                 fallback_val = len(str(val)) % 10
                 open_vals.append(fallback_val)
-        
+
         # Clean close predictions with strict validation
         close_vals = []
         for pred in close_preds[:3]:
@@ -885,20 +883,20 @@ def train_and_predict_advanced(df, market, prediction_date):
             except (ValueError, TypeError, OverflowError):
                 fallback_val = len(str(val)) % 10
                 close_vals.append(fallback_val)
-        
+
         # Clean jodi predictions with comprehensive long string handling
         jodi_vals = []
         for i, pred in enumerate(jodi_preds[:10]):
             try:
                 val = str(pred[0]).strip()
-                
+
                 # Immediate check for extremely long strings (likely corrupted)
                 if len(val) > 50:
                     # Generate deterministic value based on position
                     deterministic_val = (i * 7 + 13) % 90 + 10
                     jodi_vals.append(f"{deterministic_val:02d}")
                     continue
-                
+
                 # Handle moderately long strings (10-50 chars)
                 if len(val) > 10:
                     # Use first and last character for deterministic generation
@@ -907,16 +905,16 @@ def train_and_predict_advanced(df, market, prediction_date):
                     deterministic_val = ((first_char + last_char) % 90) + 10
                     jodi_vals.append(f"{deterministic_val:02d}")
                     continue
-                
+
                 # Handle empty or very short strings
                 if not val or len(val) == 0:
                     fallback_val = (i * 11 + 17) % 90 + 10
                     jodi_vals.append(f"{fallback_val:02d}")
                     continue
-                
+
                 # Normal processing for reasonable length strings
                 digits_only = ''.join(c for c in val if c.isdigit())
-                
+
                 if len(digits_only) >= 2:
                     # Take first 2 digits and ensure valid range
                     two_digit = int(digits_only[:2])
@@ -937,12 +935,12 @@ def train_and_predict_advanced(df, market, prediction_date):
                     else:
                         deterministic_val = (i * 13 + 19) % 90 + 10
                     jodi_vals.append(f"{deterministic_val:02d}")
-                    
+
             except (ValueError, TypeError, IndexError, OverflowError, UnicodeError):
                 # Ultimate fallback with position-based deterministic value
                 fallback_val = ((i + 1) * 23 + 29) % 90 + 10
                 jodi_vals.append(f"{fallback_val:02d}")
-        
+
         # Ensure we have valid predictions with proper constraints
         if not open_vals or len(open_vals) == 0:
             open_vals = [np.random.randint(0, 10) for _ in range(2)]
@@ -950,12 +948,12 @@ def train_and_predict_advanced(df, market, prediction_date):
             close_vals = [np.random.randint(0, 10) for _ in range(2)]
         if not jodi_vals or len(jodi_vals) == 0:
             jodi_vals = [f"{np.random.randint(10, 100):02d}" for _ in range(10)]
-        
+
         # Comprehensive final validation with strict constraints
         def validate_and_clean_final_predictions(predictions, pred_type):
             """Final validation and cleaning of predictions"""
             cleaned = []
-            
+
             for i, val in enumerate(predictions):
                 try:
                     if pred_type in ["open", "close"]:
@@ -979,7 +977,7 @@ def train_and_predict_advanced(df, market, prediction_date):
                         val_str = str(val)
                         if len(val_str) > 10:  # Truncate long strings
                             val_str = val_str[:2]
-                        
+
                         digits = ''.join(c for c in val_str if c.isdigit())
                         if len(digits) >= 2:
                             jodi_int = int(digits[:2])
@@ -995,21 +993,21 @@ def train_and_predict_advanced(df, market, prediction_date):
                             # Generate from position
                             jodi_int = ((i + 1) * 19 + 23) % 90 + 10
                             cleaned.append(f"{jodi_int:02d}")
-                            
+
                 except (ValueError, TypeError, OverflowError):
                     if pred_type in ["open", "close"]:
                         cleaned.append(i % 10)
                     else:
                         fallback = ((i + 1) * 29 + 37) % 90 + 10
                         cleaned.append(f"{fallback:02d}")
-            
+
             return cleaned
-        
+
         # Apply final validation
         open_vals = validate_and_clean_final_predictions(open_vals[:5], "open")[:2]
         close_vals = validate_and_clean_final_predictions(close_vals[:5], "close")[:2]
         jodi_vals = validate_and_clean_final_predictions(jodi_vals[:15], "jodi")[:10]
-        
+
         # Ensure minimum required counts with clean fallbacks
         while len(open_vals) < 2:
             open_vals.append(len(open_vals) % 10)
@@ -1019,20 +1017,20 @@ def train_and_predict_advanced(df, market, prediction_date):
             idx = len(jodi_vals)
             fallback_jodi = ((idx + 1) * 41 + 43) % 90 + 10
             jodi_vals.append(f"{fallback_jodi:02d}")
-            
+
     except Exception as e:
         print(f"Error extracting predictions: {e}")
         # Generate fallback predictions
         open_vals = [np.random.randint(0, 10) for _ in range(2)]
         close_vals = [np.random.randint(0, 10) for _ in range(2)]
         jodi_vals = [f"{np.random.randint(10, 100):02d}" for _ in range(10)]
-    
+
     # Calculate overall confidence
     overall_confidence = (open_conf + close_conf + jodi_conf) / 3
-    
+
     # Save confidence to database
     save_confidence_score(market, prediction_date, overall_confidence, "ensemble")
-    
+
     return open_vals, close_vals, jodi_vals, "Prediction successful", overall_confidence
 
 # === DATABASE OPERATIONS ===
@@ -1089,19 +1087,19 @@ def get_predictions():
     try:
         # Set proper JSON headers
         from flask import Response
-        
+
         df = load_data()
         if df.empty:
             print("Main data file corrupted or empty, using fallback data")
             df = generate_fallback_data()
-            
+
         prediction_date = next_prediction_date()
         predictions = []
-        
+
         for market in MARKETS:
             try:
                 open_vals, close_vals, jodis, status, confidence = train_and_predict_advanced(df, market, prediction_date)
-                
+
                 if not open_vals or not close_vals or not jodis:
                     predictions.append({
                         "market": market,
@@ -1110,14 +1108,14 @@ def get_predictions():
                         "confidence": 0.0
                     })
                     continue
-                
+
                 open_digits = [str(patti_to_digit(val)) for val in open_vals]
                 close_digits = [str(patti_to_digit(val)) for val in close_vals]
                 pattis = generate_pattis(open_vals, close_vals)
-                
+
                 # Get pattern analysis
                 patterns = analyze_patterns(df, market)
-                
+
                 predictions.append({
                     "market": market,
                     "status": "success",
@@ -1137,13 +1135,13 @@ def get_predictions():
                     "message": f"Prediction failed: {str(e)}",
                     "confidence": 0.0
                 })
-        
+
         return jsonify({
             "success": True,
             "date": prediction_date,
             "predictions": predictions
         })
-        
+
     except Exception as e:
         return jsonify({
             "success": False,
@@ -1155,11 +1153,11 @@ def get_heatmap_data(market):
     try:
         df = load_data()
         market_data = df[df["Market"] == market].tail(100)
-        
+
         # Create number frequency heatmap data
         numbers = list(range(10))
         frequency_matrix = []
-        
+
         for i in numbers:
             row = []
             for j in numbers:
@@ -1168,7 +1166,7 @@ def get_heatmap_data(market):
                 ])
                 row.append(count)
             frequency_matrix.append(row)
-        
+
         return jsonify({
             "success": True,
             "heatmap_data": frequency_matrix,
@@ -1185,16 +1183,16 @@ def get_trend_analysis(market):
     try:
         df = load_data()
         market_data = df[df["Market"] == market].tail(50)
-        
+
         # Prepare trend data
         dates = market_data["Date"].dt.strftime("%Y-%m-%d").tolist()
         open_values = market_data["Open"].tolist()
         close_values = market_data["Close"].tolist()
-        
+
         # Calculate moving averages
         ma_3 = market_data["Open"].rolling(3).mean().tolist()
         ma_7 = market_data["Open"].rolling(7).mean().tolist()
-        
+
         return jsonify({
             "success": True,
             "dates": dates,
@@ -1216,10 +1214,10 @@ def calculate_profit_loss_api():
         predictions = data.get('predictions', [])
         actuals = data.get('actuals', [])
         bet_amounts = data.get('bet_amounts', [])
-        
+
         results = []
         total_profit_loss = 0
-        
+
         for i, (pred, actual, bet) in enumerate(zip(predictions, actuals, bet_amounts)):
             pl = calculate_profit_loss(pred, actual, bet)
             total_profit_loss += pl
@@ -1230,7 +1228,7 @@ def calculate_profit_loss_api():
                 "profit_loss": pl,
                 "result": "WIN" if pl > 0 else "LOSS"
             })
-        
+
         return jsonify({
             "success": True,
             "results": results,
@@ -1253,7 +1251,7 @@ def export_csv(data_type):
             df = load_data()
         else:
             return jsonify({"error": "Invalid data type"}), 400
-        
+
         csv_data = df.to_csv(index=False)
         return csv_data, 200, {
             'Content-Type': 'text/csv',
@@ -1270,10 +1268,10 @@ def get_results():
     try:
         today = datetime.now().strftime("%d/%m/%Y")
         df = load_data()
-        
+
         # Get today's actual results
         today_results = df[df['Date'].dt.strftime('%d/%m/%Y') == today]
-        
+
         # Load predictions for comparison
         try:
             pred_df = pd.read_csv(PRED_FILE)
@@ -1281,19 +1279,19 @@ def get_results():
             today_predictions = pred_df[pred_df['Date'] == today]
         except:
             today_predictions = pd.DataFrame()
-        
+
         results = []
         accuracy_stats = {"total": 0, "correct": 0, "accuracy": 0.0}
-        
+
         for market in MARKETS:
             # Get actual result
             actual_row = today_results[today_results['Market'] == market]
             actual = actual_row.iloc[0].to_dict() if not actual_row.empty else None
-            
+
             # Get prediction
             pred_row = today_predictions[today_predictions['Market'] == market]
             prediction = pred_row.iloc[0].to_dict() if not pred_row.empty else None
-            
+
             result = {
                 'market': market,
                 'actual': actual,
@@ -1301,49 +1299,49 @@ def get_results():
                 'status': 'declared' if actual else 'pending',
                 'matches': {}
             }
-            
+
             if actual and prediction:
                 # Check matches
                 try:
                     pred_open = str(prediction.get('Open', '')).split(', ')
                     pred_close = str(prediction.get('Close', '')).split(', ')
                     pred_jodis = str(prediction.get('Jodis', '')).split(', ')
-                    
+
                     actual_jodi = str(actual['Jodi'])
                     actual_open = str(actual['Open'])
                     actual_close = str(actual['Close'])
-                    
+
                     open_match = actual_open in pred_open
                     close_match = actual_close in pred_close
                     jodi_match = actual_jodi in pred_jodis
-                    
+
                     result['matches'] = {
                         'open': open_match,
                         'close': close_match,
                         'jodi': jodi_match
                     }
-                    
+
                     accuracy_stats["total"] += 1
                     if open_match or close_match or jodi_match:
                         accuracy_stats["correct"] += 1
-                        
+
                 except Exception as e:
                     print(f"Error checking matches for {market}: {e}")
-            
+
             results.append(result)
-        
+
         if accuracy_stats["total"] > 0:
             accuracy_stats["accuracy"] = round(
                 (accuracy_stats["correct"] / accuracy_stats["total"]) * 100, 2
             )
-        
+
         return jsonify({
             "success": True,
             "date": today,
             "results": results,
             "accuracy": accuracy_stats
         })
-        
+
     except Exception as e:
         print(f"Results API error: {e}")
         return jsonify({
@@ -1360,7 +1358,7 @@ def user_preferences():
             user_id = data.get('user_id', 'default')
             favorite_markets = json.dumps(data.get('favorite_markets', []))
             notification_settings = json.dumps(data.get('notification_settings', {}))
-            
+
             conn = sqlite3.connect(DB_FILE)
             cursor = conn.cursor()
             cursor.execute('''
@@ -1370,7 +1368,7 @@ def user_preferences():
             ''', (user_id, favorite_markets, notification_settings))
             conn.commit()
             conn.close()
-            
+
             return jsonify({"success": True, "message": "Preferences saved"})
         else:
             user_id = request.args.get('user_id', 'default')
@@ -1379,7 +1377,7 @@ def user_preferences():
             cursor.execute('SELECT * FROM user_preferences WHERE user_id = ?', (user_id,))
             result = cursor.fetchone()
             conn.close()
-            
+
             if result:
                 return jsonify({
                     "success": True,
@@ -1408,7 +1406,7 @@ def auto_update_predictions():
     try:
         df = load_data()
         prediction_date = next_prediction_date()
-        
+
         for market in MARKETS:
             open_vals, close_vals, jodis, status, confidence = train_and_predict_advanced(df, market, prediction_date)
             if open_vals and close_vals and jodis:
@@ -1419,7 +1417,7 @@ def auto_update_predictions():
                     "confidence": round(confidence * 100, 2),
                     "timestamp": datetime.now().isoformat()
                 })
-        
+
         print(f"Auto-updated predictions at {datetime.now()}")
     except Exception as e:
         print(f"Auto-update error: {e}")
