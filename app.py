@@ -697,89 +697,64 @@ def train_and_predict_advanced(df, market, prediction_date):
     # Additional validation to ensure all values are finite
     X = X.replace([np.inf, -np.inf], np.nan).fillna(0)
 
-    # Comprehensive target variable validation and cleaning
-    def clean_target_column(series, target_type):
-        """Clean and validate target columns with comprehensive error handling"""
-        cleaned_series = []
-
-        for idx, val in series.items():
+    # Simple and robust target variable cleaning
+    def clean_numeric_column(series, min_val=0, max_val=9):
+        """Simple cleaning for numeric columns"""
+        cleaned = []
+        for val in series:
             try:
-                if target_type in ["Open", "Close"]:
-                    # Handle Open/Close columns (should be 0-9)
-                    if pd.isna(val):
-                        cleaned_series.append(np.random.randint(0, 10))
-                        continue
+                if pd.isna(val):
+                    cleaned.append(np.random.randint(min_val, max_val + 1))
+                    continue
+                
+                # Convert to string and take only first few characters
+                val_str = str(val)[:3]
+                
+                # Extract first digit
+                for char in val_str:
+                    if char.isdigit():
+                        digit = int(char)
+                        if min_val <= digit <= max_val:
+                            cleaned.append(digit)
+                            break
+                else:
+                    # No valid digit found
+                    cleaned.append(np.random.randint(min_val, max_val + 1))
+            except:
+                cleaned.append(np.random.randint(min_val, max_val + 1))
+        return cleaned
 
-                    val_str = str(val).strip()
-
-                    # Handle extremely long values (prevent memory issues)
-                    if len(val_str) > 10:
-                        # Use position-based deterministic value for very long strings
-                        cleaned_series.append(idx % 10)
-                        continue
-
-                    # Extract first valid digit from reasonable length strings
-                    digits = ''.join(c for c in val_str[:5] if c.isdigit())
-                    if digits:
-                        digit = int(digits[0]) % 10
-                        cleaned_series.append(digit)
+    def clean_jodi_column(series):
+        """Simple cleaning for jodi column"""
+        cleaned = []
+        for val in series:
+            try:
+                if pd.isna(val):
+                    cleaned.append(f"{np.random.randint(10, 100):02d}")
+                    continue
+                
+                # Convert to string and take only first few characters
+                val_str = str(val)[:3]
+                digits = ''.join(c for c in val_str if c.isdigit())
+                
+                if len(digits) >= 2:
+                    jodi_int = int(digits[:2])
+                    if 10 <= jodi_int <= 99:
+                        cleaned.append(f"{jodi_int:02d}")
                     else:
-                        # Fallback to position-based value
-                        cleaned_series.append(idx % 10)
+                        cleaned.append(f"{np.random.randint(10, 100):02d}")
+                elif len(digits) == 1:
+                    cleaned.append(f"{int(digits[0]) + 10:02d}")
+                else:
+                    cleaned.append(f"{np.random.randint(10, 100):02d}")
+            except:
+                cleaned.append(f"{np.random.randint(10, 100):02d}")
+        return cleaned
 
-                elif target_type == "Jodi":
-                    # Handle Jodi column (should be 2-digit string)
-                    if pd.isna(val):
-                        fallback_jodi = f"{np.random.randint(10, 100):02d}"
-                        cleaned_series.append(fallback_jodi)
-                        continue
-
-                    val_str = str(val).strip()
-
-                    # Handle extremely long values
-                    if len(val_str) > 50:
-                        # Generate from hash of first 10 characters
-                        hash_val = abs(hash(val_str[:10])) % 90 + 10
-                        cleaned_series.append(f"{hash_val:02d}")
-                        continue
-
-                    # Extract digits
-                    digits = ''.join(c for c in val_str if c.isdigit())
-
-                    if len(digits) >= 2:
-                        jodi = digits[:2]
-                        jodi_int = int(jodi)
-                        if jodi_int < 10:
-                            jodi_int += 10
-                        elif jodi_int > 99:
-                            jodi_int = jodi_int % 90 + 10
-                        cleaned_series.append(f"{jodi_int:02d}")
-                    elif len(digits) == 1:
-                        jodi_int = int(digits[0]) + 10
-                        cleaned_series.append(f"{jodi_int:02d}")
-                    else:
-                        # No valid digits - use deterministic fallback
-                        if val_str:
-                            char_sum = sum(ord(c) for c in val_str[:3])
-                            jodi_int = (char_sum % 90) + 10
-                        else:
-                            jodi_int = (idx % 90) + 10
-                        cleaned_series.append(f"{jodi_int:02d}")
-
-            except (ValueError, TypeError, OverflowError, UnicodeError):
-                # Ultimate fallback based on target type
-                if target_type in ["Open", "Close"]:
-                    cleaned_series.append(idx % 10)
-                else:  # Jodi
-                    fallback_val = ((idx + 1) * 17 + 31) % 90 + 10
-                    cleaned_series.append(f"{fallback_val:02d}")
-
-        return pd.Series(cleaned_series, index=series.index)
-
-    # Apply comprehensive cleaning
-    y_open = clean_target_column(df_market["Open"], "Open").astype(int)
-    y_close = clean_target_column(df_market["Close"], "Close").astype(int)
-    y_jodi = clean_target_column(df_market["Jodi"], "Jodi")
+    # Apply simple cleaning
+    y_open = clean_numeric_column(df_market["Open"], 0, 9)
+    y_close = clean_numeric_column(df_market["Close"], 0, 9)
+    y_jodi = clean_jodi_column(df_market["Jodi"])
 
     # Train ensemble models
     predictor_open = EnsemblePredictor()
@@ -821,202 +796,42 @@ def train_and_predict_advanced(df, market, prediction_date):
     if not all([open_preds, close_preds, jodi_preds]):
         return None, None, None, "Prediction failed", 0.0
 
-    # Extract top predictions with validation
+    # Extract predictions simply and safely
     try:
-        # Clean open predictions with strict validation
+        # Extract open predictions
         open_vals = []
-        for pred in open_preds[:3]:
+        for pred in open_preds[:2]:
             val = pred[0]
-            try:
-                # Handle different data types with strict validation
-                if isinstance(val, (int, np.integer)):
-                    digit = int(val) % 10  # Ensure 0-9 range
-                    open_vals.append(digit)
-                elif isinstance(val, (float, np.floating)):
-                    if not np.isnan(val):
-                        digit = int(val) % 10  # Ensure 0-9 range
-                        open_vals.append(digit)
-                elif isinstance(val, str):
-                    # Handle string values more robustly
-                    val_clean = val.strip()
-                    if val_clean.isdigit() and len(val_clean) <= 3:
-                        # Normal numeric string
-                        digit = int(val_clean) % 10
-                        open_vals.append(digit)
-                    else:
-                        # Very long string or non-numeric - use hash
-                        hash_val = abs(hash(val_clean)) % 10
-                        open_vals.append(hash_val)
-                else:
-                    # Unknown type - use hash of string representation
-                    hash_val = abs(hash(str(val))) % 10
-                    open_vals.append(hash_val)
-            except (ValueError, TypeError, OverflowError):
-                # Fallback: generate deterministic value
-                fallback_val = len(str(val)) % 10
-                open_vals.append(fallback_val)
+            if isinstance(val, (int, np.integer)) and 0 <= val <= 9:
+                open_vals.append(int(val))
+            else:
+                open_vals.append(np.random.randint(0, 10))
 
-        # Clean close predictions with strict validation
+        # Extract close predictions  
         close_vals = []
-        for pred in close_preds[:3]:
+        for pred in close_preds[:2]:
             val = pred[0]
-            try:
-                if isinstance(val, (int, np.integer)):
-                    digit = int(val) % 10  # Ensure 0-9 range
-                    close_vals.append(digit)
-                elif isinstance(val, (float, np.floating)):
-                    if not np.isnan(val):
-                        digit = int(val) % 10  # Ensure 0-9 range
-                        close_vals.append(digit)
-                elif isinstance(val, str):
-                    val_clean = val.strip()
-                    if val_clean.isdigit() and len(val_clean) <= 3:
-                        digit = int(val_clean) % 10
-                        close_vals.append(digit)
-                    else:
-                        # Use hash for very long strings
-                        hash_val = abs(hash(val_clean)) % 10
-                        close_vals.append(hash_val)
-                else:
-                    hash_val = abs(hash(str(val))) % 10
-                    close_vals.append(hash_val)
-            except (ValueError, TypeError, OverflowError):
-                fallback_val = len(str(val)) % 10
-                close_vals.append(fallback_val)
+            if isinstance(val, (int, np.integer)) and 0 <= val <= 9:
+                close_vals.append(int(val))
+            else:
+                close_vals.append(np.random.randint(0, 10))
 
-        # Clean jodi predictions with comprehensive long string handling
+        # Extract jodi predictions
         jodi_vals = []
-        for i, pred in enumerate(jodi_preds[:10]):
-            try:
-                val = str(pred[0]).strip()
+        for pred in jodi_preds[:10]:
+            val = str(pred[0])
+            if len(val) == 2 and val.isdigit():
+                jodi_vals.append(val)
+            else:
+                jodi_vals.append(f"{np.random.randint(10, 100):02d}")
 
-                # Immediate check for extremely long strings (likely corrupted)
-                if len(val) > 50:
-                    # Generate deterministic value based on position
-                    deterministic_val = (i * 7 + 13) % 90 + 10
-                    jodi_vals.append(f"{deterministic_val:02d}")
-                    continue
-
-                # Handle moderately long strings (10-50 chars)
-                if len(val) > 10:
-                    # Use first and last character for deterministic generation
-                    first_char = ord(val[0]) if val else 65
-                    last_char = ord(val[-1]) if val else 90
-                    deterministic_val = ((first_char + last_char) % 90) + 10
-                    jodi_vals.append(f"{deterministic_val:02d}")
-                    continue
-
-                # Handle empty or very short strings
-                if not val or len(val) == 0:
-                    fallback_val = (i * 11 + 17) % 90 + 10
-                    jodi_vals.append(f"{fallback_val:02d}")
-                    continue
-
-                # Normal processing for reasonable length strings
-                digits_only = ''.join(c for c in val if c.isdigit())
-
-                if len(digits_only) >= 2:
-                    # Take first 2 digits and ensure valid range
-                    two_digit = int(digits_only[:2])
-                    if two_digit < 10:
-                        two_digit += 10
-                    elif two_digit > 99:
-                        two_digit = two_digit % 90 + 10
-                    jodi_vals.append(f"{two_digit:02d}")
-                elif len(digits_only) == 1:
-                    # Single digit - make it 10-19
-                    single = int(digits_only[0]) + 10
-                    jodi_vals.append(f"{single:02d}")
-                else:
-                    # No digits - use ASCII values deterministically
-                    if val and len(val) > 0:
-                        ascii_sum = sum(ord(c) for c in val[:3])  # Use first 3 chars max
-                        deterministic_val = (ascii_sum % 90) + 10
-                    else:
-                        deterministic_val = (i * 13 + 19) % 90 + 10
-                    jodi_vals.append(f"{deterministic_val:02d}")
-
-            except (ValueError, TypeError, IndexError, OverflowError, UnicodeError):
-                # Ultimate fallback with position-based deterministic value
-                fallback_val = ((i + 1) * 23 + 29) % 90 + 10
-                jodi_vals.append(f"{fallback_val:02d}")
-
-        # Ensure we have valid predictions with proper constraints
-        if not open_vals or len(open_vals) == 0:
-            open_vals = [np.random.randint(0, 10) for _ in range(2)]
-        if not close_vals or len(close_vals) == 0:
-            close_vals = [np.random.randint(0, 10) for _ in range(2)]
-        if not jodi_vals or len(jodi_vals) == 0:
-            jodi_vals = [f"{np.random.randint(10, 100):02d}" for _ in range(10)]
-
-        # Comprehensive final validation with strict constraints
-        def validate_and_clean_final_predictions(predictions, pred_type):
-            """Final validation and cleaning of predictions"""
-            cleaned = []
-
-            for i, val in enumerate(predictions):
-                try:
-                    if pred_type in ["open", "close"]:
-                        # Ensure single digits 0-9
-                        if isinstance(val, (int, float, np.integer, np.floating)):
-                            if np.isfinite(val):
-                                digit = int(val) % 10
-                                cleaned.append(digit)
-                            else:
-                                cleaned.append(i % 10)
-                        else:
-                            # Convert string/other types
-                            val_str = str(val)[:5]  # Limit string length
-                            digits = ''.join(c for c in val_str if c.isdigit())
-                            if digits:
-                                cleaned.append(int(digits[0]) % 10)
-                            else:
-                                cleaned.append(i % 10)
-                    else:  # jodi
-                        # Ensure 2-digit strings 10-99
-                        val_str = str(val)
-                        if len(val_str) > 10:  # Truncate long strings
-                            val_str = val_str[:2]
-
-                        digits = ''.join(c for c in val_str if c.isdigit())
-                        if len(digits) >= 2:
-                            jodi_int = int(digits[:2])
-                            if jodi_int < 10:
-                                jodi_int += 10
-                            elif jodi_int > 99:
-                                jodi_int = jodi_int % 90 + 10
-                            cleaned.append(f"{jodi_int:02d}")
-                        elif len(digits) == 1:
-                            jodi_int = int(digits[0]) + 10
-                            cleaned.append(f"{jodi_int:02d}")
-                        else:
-                            # Generate from position
-                            jodi_int = ((i + 1) * 19 + 23) % 90 + 10
-                            cleaned.append(f"{jodi_int:02d}")
-
-                except (ValueError, TypeError, OverflowError):
-                    if pred_type in ["open", "close"]:
-                        cleaned.append(i % 10)
-                    else:
-                        fallback = ((i + 1) * 29 + 37) % 90 + 10
-                        cleaned.append(f"{fallback:02d}")
-
-            return cleaned
-
-        # Apply final validation
-        open_vals = validate_and_clean_final_predictions(open_vals[:5], "open")[:2]
-        close_vals = validate_and_clean_final_predictions(close_vals[:5], "close")[:2]
-        jodi_vals = validate_and_clean_final_predictions(jodi_vals[:15], "jodi")[:10]
-
-        # Ensure minimum required counts with clean fallbacks
+        # Ensure we have enough predictions
         while len(open_vals) < 2:
-            open_vals.append(len(open_vals) % 10)
+            open_vals.append(np.random.randint(0, 10))
         while len(close_vals) < 2:
-            close_vals.append((len(close_vals) + 3) % 10)
+            close_vals.append(np.random.randint(0, 10))
         while len(jodi_vals) < 10:
-            idx = len(jodi_vals)
-            fallback_jodi = ((idx + 1) * 41 + 43) % 90 + 10
-            jodi_vals.append(f"{fallback_jodi:02d}")
+            jodi_vals.append(f"{np.random.randint(10, 100):02d}")
 
     except Exception as e:
         print(f"Error extracting predictions: {e}")
@@ -1090,8 +905,8 @@ def get_predictions():
 
         df = load_data()
         if df.empty:
-            print("Main data file corrupted or empty, using fallback data")
-            df = generate_fallback_data()
+            print("Main data file corrupted or empty, using clean sample data")
+            df = generate_clean_sample_data()
 
         prediction_date = next_prediction_date()
         predictions = []
