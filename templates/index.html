@@ -608,9 +608,19 @@
 
         <!-- Results Section -->
         <div class="section" id="results">
-            <h2>Latest Results</h2>
+            <div class="controls">
+                <button class="btn btn-primary" onclick="loadResults()">
+                    <i class="fas fa-trophy"></i> Load Latest Results
+                </button>
+                <button class="btn btn-secondary" onclick="exportData('results')">
+                    <i class="fas fa-download"></i> Export Results
+                </button>
+            </div>
             <div id="resultsContent">
-                <p>Results will be displayed here...</p>
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Click "Load Latest Results" to view results...</p>
+                </div>
             </div>
         </div>
     </div>
@@ -1049,7 +1059,7 @@ async function loadAnalytics() {
             content.innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
-                    <p>Loading results data...</p>
+                    <p>Loading latest results...</p>
                 </div>
             `;
 
@@ -1070,12 +1080,13 @@ async function loadAnalytics() {
         function displayResults(data) {
             const content = document.getElementById('resultsContent');
 
-            let html = `<h2>Latest Results</h2><div class="prediction-grid">`;
+            let html = `<h2>Latest Results - ${data.date}</h2><div class="prediction-grid">`;
 
             data.results.forEach(result => {
                 html += `
                     <div class="prediction-card">
                         <h3>${result.market}</h3>
+                        <div class="confidence-badge">Status: ${result.status}</div>
                         <div class="prediction-values">
                             <div class="prediction-row">
                                 <span>Open:</span>
@@ -1088,6 +1099,10 @@ async function loadAnalytics() {
                             <div class="prediction-row">
                                 <span>Jodi:</span>
                                 <span>${result.jodi}</span>
+                            </div>
+                            <div class="prediction-row">
+                                <span>Time:</span>
+                                <span>${result.time || 'N/A'}</span>
                             </div>
                         </div>
                     </div>
