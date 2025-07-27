@@ -137,12 +137,38 @@ def handle_json_errors(f):
                 return jsonify(result)
             return result
         except Exception as e:
+            print(f"API Error in {f.__name__}: {str(e)}")
             return jsonify({
                 'success': False,
                 'error': str(e),
                 'message': 'Internal server error'
             }), 500
     return decorated_function
+
+# Add global error handlers
+@app.errorhandler(404)
+def not_found_error(error):
+    return jsonify({
+        'success': False,
+        'error': 'Endpoint not found',
+        'message': 'The requested API endpoint does not exist'
+    }), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({
+        'success': False,
+        'error': 'Internal server error',
+        'message': 'An unexpected error occurred'
+    }), 500
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    return jsonify({
+        'success': False,
+        'error': str(e),
+        'message': 'An unexpected error occurred'
+    }), 500
 
 @app.route('/api/analytics/performance')
 @handle_json_errors
@@ -179,6 +205,7 @@ def analytics_performance():
         })
 
 @app.route('/api/analytics/heatmap')
+@handle_json_errors
 def analytics_heatmap():
     try:
         # Calculate number frequency from historical data
@@ -213,6 +240,7 @@ def analytics_heatmap():
         })
 
 @app.route('/api/analytics/accuracy-trend')
+@handle_json_errors
 def analytics_accuracy_trend():
     try:
         trends = []
@@ -250,6 +278,7 @@ def analytics_accuracy_trend():
         })
 
 @app.route('/api/analytics/risk-metrics')
+@handle_json_errors
 def analytics_risk_metrics():
     try:
         # Calculate risk distribution
@@ -782,6 +811,7 @@ def index():
     return render_template('index.html')
 
 @app.route('/api/predictions')
+@handle_json_errors
 def get_predictions():
     try:
         df = load_data()
@@ -972,6 +1002,7 @@ def save_predictions_to_file(predictions, date):
         print(f"Error saving predictions: {e}")
 
 @app.route('/api/results')
+@handle_json_errors
 def get_results():
     try:
         # Generate sample results for demonstration
@@ -1090,6 +1121,11 @@ scheduler.add_job(auto_update_predictions, 'interval', minutes=30)
 scheduler.start()
 
 if __name__ == "__main__":
-    init_database()
-    port = int(os.environ.get("PORT", 5000))
-    socketio.run(app, host="0.0.0.0", port=port, debug=False, allow_unsafe_werkzeug=True)
+    try:
+        init_database()
+        port = int(os.environ.get("PORT", 5000))
+        print(f"Starting server on 0.0.0.0:{port}")
+        socketio.run(app, host="0.0.0.0", port=port, debug=False, allow_unsafe_werkzeug=True)
+    except Exception as e:
+        print(f"Failed to start server: {e}")
+        raise

@@ -744,21 +744,49 @@ async function loadAnalytics() {
 
             try {
                 const [performanceRes, heatmapRes, accuracyRes, riskRes] = await Promise.all([
-                    fetch('/api/analytics/performance').catch(e => ({ json: () => ({ success: false, error: e.message }) })),
-                    fetch('/api/analytics/heatmap').catch(e => ({ json: () => ({ success: false, error: e.message }) })),
-                    fetch('/api/analytics/accuracy-trend').catch(e => ({ json: () => ({ success: false, error: e.message }) })),
-                    fetch('/api/analytics/risk-metrics').catch(e => ({ json: () => ({ success: false, error: e.message }) }))
+                    fetch('/api/analytics/performance').catch(e => {
+                        console.error('Performance fetch error:', e);
+                        return { ok: false, status: 500, json: () => Promise.resolve({ success: false, error: e.message }) };
+                    }),
+                    fetch('/api/analytics/heatmap').catch(e => {
+                        console.error('Heatmap fetch error:', e);
+                        return { ok: false, status: 500, json: () => Promise.resolve({ success: false, error: e.message }) };
+                    }),
+                    fetch('/api/analytics/accuracy-trend').catch(e => {
+                        console.error('Accuracy fetch error:', e);
+                        return { ok: false, status: 500, json: () => Promise.resolve({ success: false, error: e.message }) };
+                    }),
+                    fetch('/api/analytics/risk-metrics').catch(e => {
+                        console.error('Risk fetch error:', e);
+                        return { ok: false, status: 500, json: () => Promise.resolve({ success: false, error: e.message }) };
+                    })
                 ]);
 
-                const performance = await performanceRes.json().catch(e => ({ success: false, error: 'Parse error' }));
-                const heatmap = await heatmapRes.json().catch(e => ({ success: false, error: 'Parse error' }));
-                const accuracy = await accuracyRes.json().catch(e => ({ success: false, error: 'Parse error' }));
-                const risk = await riskRes.json().catch(e => ({ success: false, error: 'Parse error' }));
+                const performance = await safeJsonParse(performanceRes);
+                const heatmap = await safeJsonParse(heatmapRes);
+                const accuracy = await safeJsonParse(accuracyRes);
+                const risk = await safeJsonParse(riskRes);
 
                 displayAnalytics(performance, heatmap, accuracy, risk);
             } catch (error) {
                 console.error('Analytics error:', error);
                 content.innerHTML = `<div class="error">Error loading analytics: ${error.message}</div>`;
+            }
+        }
+
+        async function safeJsonParse(response) {
+            try {
+                if (!response.ok) {
+                    return { success: false, error: `HTTP ${response.status}` };
+                }
+                const text = await response.text();
+                if (!text || text.trim() === '') {
+                    return { success: false, error: 'Empty response' };
+                }
+                return JSON.parse(text);
+            } catch (e) {
+                console.error('JSON parse error:', e);
+                return { success: false, error: 'Invalid JSON response' };
             }
         }
 
@@ -798,21 +826,49 @@ async function loadAnalytics() {
 
             try {
                 const [performanceRes, heatmapRes, accuracyRes, riskRes] = await Promise.all([
-                    fetch('/api/analytics/performance').catch(e => ({ json: () => ({ success: false, error: e.message }) })),
-                    fetch('/api/analytics/heatmap').catch(e => ({ json: () => ({ success: false, error: e.message }) })),
-                    fetch('/api/analytics/accuracy-trend').catch(e => ({ json: () => ({ success: false, error: e.message }) })),
-                    fetch('/api/analytics/risk-metrics').catch(e => ({ json: () => ({ success: false, error: e.message }) }))
+                    fetch('/api/analytics/performance').catch(e => {
+                        console.error('Performance fetch error:', e);
+                        return { ok: false, status: 500, json: () => Promise.resolve({ success: false, error: e.message }) };
+                    }),
+                    fetch('/api/analytics/heatmap').catch(e => {
+                        console.error('Heatmap fetch error:', e);
+                        return { ok: false, status: 500, json: () => Promise.resolve({ success: false, error: e.message }) };
+                    }),
+                    fetch('/api/analytics/accuracy-trend').catch(e => {
+                        console.error('Accuracy fetch error:', e);
+                        return { ok: false, status: 500, json: () => Promise.resolve({ success: false, error: e.message }) };
+                    }),
+                    fetch('/api/analytics/risk-metrics').catch(e => {
+                        console.error('Risk fetch error:', e);
+                        return { ok: false, status: 500, json: () => Promise.resolve({ success: false, error: e.message }) };
+                    })
                 ]);
 
-                const performance = await performanceRes.json().catch(e => ({ success: false, error: 'Parse error' }));
-                const heatmap = await heatmapRes.json().catch(e => ({ success: false, error: 'Parse error' }));
-                const accuracy = await accuracyRes.json().catch(e => ({ success: false, error: 'Parse error' }));
-                const risk = await riskRes.json().catch(e => ({ success: false, error: 'Parse error' }));
+                const performance = await safeJsonParse(performanceRes);
+                const heatmap = await safeJsonParse(heatmapRes);
+                const accuracy = await safeJsonParse(accuracyRes);
+                const risk = await safeJsonParse(riskRes);
 
                 displayAnalytics(performance, heatmap, accuracy, risk);
             } catch (error) {
                 console.error('Analytics error:', error);
                 content.innerHTML = `<div class="error">Error loading analytics: ${error.message}</div>`;
+            }
+        }
+
+        async function safeJsonParse(response) {
+            try {
+                if (!response.ok) {
+                    return { success: false, error: `HTTP ${response.status}` };
+                }
+                const text = await response.text();
+                if (!text || text.trim() === '') {
+                    return { success: false, error: 'Empty response' };
+                }
+                return JSON.parse(text);
+            } catch (e) {
+                console.error('JSON parse error:', e);
+                return { success: false, error: 'Invalid JSON response' };
             }
         }
         function updatePerformanceCharts(data) {
