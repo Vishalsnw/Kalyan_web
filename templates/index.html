@@ -1,9 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Satta Matka Live Dashboard</title>
+    <title>Matka King - Live Results & Predictions</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,207 +14,369 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0c1445 0%, #1a237e 50%, #303f9f 100%);
             min-height: 100vh;
-            color: #333;
+            color: #fff;
         }
 
+        /* Header */
         .header {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 1rem;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            border-bottom: 2px solid #ff6b35;
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 1000;
         }
 
-        .header h1 {
-            color: #2c3e50;
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .live-indicator {
-            display: inline-flex;
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            background: #27ae60;
-            color: white;
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: bold;
+            padding: 0 2rem;
         }
 
-        .live-dot {
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .live-badge {
+            background: linear-gradient(45deg, #00c851, #007e33);
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(0, 200, 81, 0.3);
+        }
+
+        .pulse-dot {
             width: 8px;
             height: 8px;
             background: #fff;
             border-radius: 50%;
-            margin-right: 0.5rem;
             animation: pulse 2s infinite;
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
         }
 
+        /* Main Container */
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             padding: 2rem;
         }
 
-        .dashboard-grid {
+        /* Stats Bar */
+        .stats-bar {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
             margin-bottom: 2rem;
         }
 
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #ff6b35;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 0.5rem;
+        }
+
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
         @media (max-width: 768px) {
-            .dashboard-grid {
+            .main-grid {
                 grid-template-columns: 1fr;
                 gap: 1rem;
             }
         }
 
-        .section {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 1.5rem;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        /* Section Cards */
+        .section-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
         .section-header {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            padding: 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
         }
 
         .section-title {
             font-size: 1.4rem;
-            font-weight: bold;
-            color: #2c3e50;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .refresh-btn {
-            background: #3498db;
-            color: white;
+            background: rgba(255, 255, 255, 0.2);
             border: none;
+            color: #fff;
             padding: 0.5rem 1rem;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.3s;
+            font-weight: 600;
+            transition: all 0.3s ease;
         }
 
         .refresh-btn:hover {
-            background: #2980b9;
+            background: rgba(255, 255, 255, 0.3);
             transform: translateY(-2px);
         }
 
+        .section-content {
+            padding: 1.5rem;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        /* Market Cards */
         .market-card {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 1rem;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
             margin-bottom: 1rem;
-            border-left: 4px solid #3498db;
-            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
         }
 
         .market-card:hover {
             transform: translateX(5px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 5px 20px rgba(255, 107, 53, 0.2);
+        }
+
+        .market-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
         }
 
         .market-name {
-            font-weight: bold;
-            font-size: 1.1rem;
-            color: #2c3e50;
-            margin-bottom: 0.8rem;
-        }
-
-        .prediction-row, .result-row {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ff6b35;
+            margin-bottom: 1rem;
             display: flex;
             justify-content: space-between;
-            margin: 0.5rem 0;
-            padding: 0.3rem 0;
+            align-items: center;
         }
 
-        .label {
-            font-weight: 500;
-            color: #7f8c8d;
-            min-width: 60px;
+        .prediction-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
         }
 
-        .values {
-            font-weight: bold;
-            color: #2c3e50;
+        .prediction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .prediction-label {
+            font-weight: 600;
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        .prediction-values {
             font-family: 'Courier New', monospace;
+            font-weight: 700;
+            color: #fff;
+            background: rgba(255, 107, 53, 0.2);
+            padding: 0.3rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
         }
 
-        .confidence {
-            background: linear-gradient(45deg, #27ae60, #2ecc71);
-            color: white;
-            padding: 0.2rem 0.6rem;
-            border-radius: 12px;
+        .confidence-badge {
+            background: linear-gradient(45deg, #00c851, #007e33);
+            color: #fff;
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
             font-size: 0.8rem;
-            font-weight: bold;
+            font-weight: 700;
+            box-shadow: 0 2px 10px rgba(0, 200, 81, 0.3);
         }
 
-        .match-indicator {
-            display: inline-block;
-            padding: 0.2rem 0.5rem;
-            border-radius: 5px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            margin-left: 0.5rem;
-        }
-
-        .match-yes {
-            background: #27ae60;
-            color: white;
-        }
-
-        .match-no {
-            background: #e74c3c;
-            color: white;
-        }
-
+        /* Result Cards */
         .result-card {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 1rem;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 1.5rem;
             margin-bottom: 1rem;
-            border-left: 4px solid #e74c3c;
+            position: relative;
+            overflow: hidden;
         }
 
         .result-declared {
-            background: #d5f4e6;
-            border-left-color: #27ae60;
-        }
-        
-        .result-pending {
-            background: #fff3cd;
-            border-left-color: #f39c12;
+            border-left: 4px solid #00c851;
+            background: linear-gradient(135deg, rgba(0, 200, 81, 0.1), rgba(0, 126, 51, 0.05));
         }
 
+        .result-pending {
+            border-left: 4px solid #ffbb33;
+            background: linear-gradient(135deg, rgba(255, 187, 51, 0.1), rgba(255, 152, 0, 0.05));
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .status-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .status-declared {
+            background: linear-gradient(45deg, #00c851, #007e33);
+            color: #fff;
+        }
+
+        .status-pending {
+            background: linear-gradient(45deg, #ffbb33, #ff9800);
+            color: #fff;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .result-item {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .result-item-label {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-item-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            font-family: 'Courier New', monospace;
+            color: #ff6b35;
+        }
+
+        /* Match Indicators */
+        .match-indicators {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .match-badge {
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .match-success {
+            background: linear-gradient(45deg, #00c851, #007e33);
+            color: #fff;
+        }
+
+        .match-fail {
+            background: linear-gradient(45deg, #ff4444, #cc0000);
+            color: #fff;
+        }
+
+        /* Loading */
         .loading {
             text-align: center;
-            padding: 2rem;
-            color: #7f8c8d;
+            padding: 3rem;
+            color: rgba(255, 255, 255, 0.7);
         }
 
         .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3498db;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid #ff6b35;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
             animation: spin 1s linear infinite;
             margin: 0 auto 1rem;
         }
@@ -223,97 +387,114 @@
         }
 
         .update-time {
+            text-align: center;
             font-size: 0.8rem;
-            color: #7f8c8d;
-            text-align: center;
+            opacity: 0.6;
             margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            margin-top: 2rem;
+        /* Scrollbar */
+        .section-content::-webkit-scrollbar {
+            width: 6px;
         }
 
-        .stat-card {
-            background: rgba(255, 255, 255, 0.95);
+        .section-content::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
-            padding: 1rem;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
-        .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #3498db;
+        .section-content::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            border-radius: 10px;
         }
 
-        .stat-label {
-            color: #7f8c8d;
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .header-content { padding: 0 1rem; }
+            .logo h1 { font-size: 1.5rem; }
+            .prediction-grid { grid-template-columns: 1fr; }
+            .result-grid { grid-template-columns: repeat(2, 1fr); }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 </head>
 <body>
+    <!-- Header -->
     <div class="header">
-        <h1>🎯 Satta Matka Live Dashboard</h1>
-        <div class="live-indicator">
-            <div class="live-dot"></div>
-            LIVE
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-crown" style="color: #ff6b35; font-size: 2rem;"></i>
+                <h1>MATKA KING</h1>
+            </div>
+            <div class="live-badge">
+                <div class="pulse-dot"></div>
+                LIVE UPDATES
+            </div>
         </div>
     </div>
 
     <div class="container">
-        <div class="dashboard-grid">
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-card">
+                <span class="stat-number" id="accuracyStat">--</span>
+                <div class="stat-label">Today's Accuracy</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="matchesStat">--</span>
+                <div class="stat-label">Successful Predictions</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="marketsStat">7</span>
+                <div class="stat-label">Active Markets</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number" id="confidenceStat">--</span>
+                <div class="stat-label">AI Confidence</div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
             <!-- Predictions Section -->
-            <div class="section">
+            <div class="section-card">
                 <div class="section-header">
-                    <div class="section-title">🤖 AI Predictions</div>
-                    <button class="refresh-btn" onclick="refreshPredictions()">Refresh</button>
+                    <div class="section-title">
+                        <i class="fas fa-robot"></i>
+                        AI Predictions
+                    </div>
+                    <button class="refresh-btn" onclick="loadPredictions()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
                 </div>
-                <div id="predictionsContent">
+                <div class="section-content" id="predictionsContent">
                     <div class="loading">
                         <div class="spinner"></div>
-                        <p>Loading predictions...</p>
+                        <p>Loading AI predictions...</p>
                     </div>
                 </div>
             </div>
 
             <!-- Results Section -->
-            <div class="section">
+            <div class="section-card">
                 <div class="section-header">
-                    <div class="section-title">📊 Live Results</div>
-                    <button class="refresh-btn" onclick="refreshResults()">Refresh</button>
+                    <div class="section-title">
+                        <i class="fas fa-chart-line"></i>
+                        Live Results
+                    </div>
+                    <button class="refresh-btn" onclick="loadResults()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
                 </div>
-                <div id="resultsContent">
+                <div class="section-content" id="resultsContent">
                     <div class="loading">
                         <div class="spinner"></div>
-                        <p>Loading results...</p>
+                        <p>Loading live results...</p>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Statistics Section -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-number" id="accuracyStat">--</div>
-                <div class="stat-label">Overall Accuracy</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="matchesStat">--</div>
-                <div class="stat-label">Today's Matches</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="marketsStat">7</div>
-                <div class="stat-label">Active Markets</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="confidenceStat">--</div>
-                <div class="stat-label">Avg Confidence</div>
             </div>
         </div>
     </div>
@@ -322,13 +503,13 @@
         let predictionsData = null;
         let resultsData = null;
 
-        // Load data immediately on page load
+        // Load data on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadDashboardData();
         });
 
-        // Auto-refresh every 60 seconds  
-        setInterval(loadDashboardData, 60000);
+        // Auto-refresh every 30 seconds  
+        setInterval(loadDashboardData, 30000);
 
         async function loadDashboardData() {
             await Promise.all([
@@ -340,18 +521,17 @@
 
         async function loadPredictions() {
             try {
-                // First try cached predictions
-                const response = await fetch('/api/predictions-cached');
+                const response = await fetch('/api/predictions');
                 const data = await response.json();
 
                 if (data.success && data.predictions.length > 0) {
                     predictionsData = data;
                     displayPredictions(data.predictions, data.date);
                 } else {
-                    // Show message to generate predictions
                     document.getElementById('predictionsContent').innerHTML = `
                         <div class="loading">
-                            <p>No predictions available. <button class="refresh-btn" onclick="generateNewPredictions()">Generate Now</button></p>
+                            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #ffbb33; margin-bottom: 1rem;"></i>
+                            <p>No predictions available for today</p>
                         </div>
                     `;
                 }
@@ -359,35 +539,8 @@
                 console.error('Error loading predictions:', error);
                 document.getElementById('predictionsContent').innerHTML = `
                     <div class="loading">
-                        <p>Error loading predictions. <button class="refresh-btn" onclick="generateNewPredictions()">Retry</button></p>
-                    </div>
-                `;
-            }
-        }
-
-        async function generateNewPredictions() {
-            document.getElementById('predictionsContent').innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Generating fresh AI predictions...</p>
-                </div>
-            `;
-
-            try {
-                const response = await fetch('/api/predictions');
-                const data = await response.json();
-
-                if (data.success) {
-                    predictionsData = data;
-                    displayPredictions(data.predictions, data.date);
-                } else {
-                    throw new Error(data.error || 'Failed to generate predictions');
-                }
-            } catch (error) {
-                console.error('Error generating predictions:', error);
-                document.getElementById('predictionsContent').innerHTML = `
-                    <div class="loading">
-                        <p>Failed to generate predictions: ${error.message}</p>
+                        <i class="fas fa-times-circle" style="font-size: 2rem; color: #ff4444; margin-bottom: 1rem;"></i>
+                        <p>Error loading predictions</p>
                     </div>
                 `;
             }
@@ -395,28 +548,35 @@
 
         function displayPredictions(predictions, date) {
             const content = document.getElementById('predictionsContent');
-
             let html = '';
+
             predictions.forEach(pred => {
                 if (pred.status === 'success') {
                     html += `
                         <div class="market-card">
-                            <div class="market-name">${pred.market}</div>
-                            <div class="prediction-row">
-                                <span class="label">Open:</span>
-                                <span class="values">${pred.open.join(', ')}</span>
+                            <div class="market-name">
+                                ${pred.market}
+                                <div class="confidence-badge">
+                                    <i class="fas fa-brain"></i> ${Math.round(pred.confidence)}%
+                                </div>
                             </div>
-                            <div class="prediction-row">
-                                <span class="label">Close:</span>
-                                <span class="values">${pred.close.join(', ')}</span>
-                            </div>
-                            <div class="prediction-row">
-                                <span class="label">Jodis:</span>
-                                <span class="values">${pred.jodis.slice(0, 5).join(', ')}</span>
-                            </div>
-                            <div class="prediction-row">
-                                <span class="label">AI:</span>
-                                <span class="confidence">${pred.confidence}% Confidence</span>
+                            <div class="prediction-grid">
+                                <div class="prediction-item">
+                                    <span class="prediction-label">Open</span>
+                                    <span class="prediction-values">${pred.open.join(', ')}</span>
+                                </div>
+                                <div class="prediction-item">
+                                    <span class="prediction-label">Close</span>
+                                    <span class="prediction-values">${pred.close.join(', ')}</span>
+                                </div>
+                                <div class="prediction-item">
+                                    <span class="prediction-label">Pattis</span>
+                                    <span class="prediction-values">${pred.pattis.slice(0,3).join(', ')}</span>
+                                </div>
+                                <div class="prediction-item">
+                                    <span class="prediction-label">Top Jodis</span>
+                                    <span class="prediction-values">${pred.jodis.slice(0,5).join(', ')}</span>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -440,6 +600,7 @@
                 console.error('Error loading results:', error);
                 document.getElementById('resultsContent').innerHTML = `
                     <div class="loading">
+                        <i class="fas fa-times-circle" style="font-size: 2rem; color: #ff4444; margin-bottom: 1rem;"></i>
                         <p>Error loading results</p>
                     </div>
                 `;
@@ -448,81 +609,62 @@
 
         function displayResults(results, date) {
             const content = document.getElementById('resultsContent');
-
             let html = '';
+
             results.forEach(result => {
-                let cardClass = 'result-card';
-                let statusIcon = '⏳'; // Pending icon
-                let statusText = 'Pending';
-                
-                if (result.status === 'declared') {
-                    cardClass += ' result-declared';
-                    statusIcon = '✅';
-                    statusText = 'Declared';
-                }
+                const isDeclared = result.status === 'declared';
+                const cardClass = isDeclared ? 'result-card result-declared' : 'result-card result-pending';
+                const statusClass = isDeclared ? 'status-badge status-declared' : 'status-badge status-pending';
+                const statusIcon = isDeclared ? 'fas fa-check-circle' : 'fas fa-clock';
+                const statusText = isDeclared ? 'DECLARED' : 'PENDING';
 
-                // Show match indicators only for declared results
                 let matchesHtml = '';
-                if (result.status === 'declared' && result.has_prediction && result.matches) {
-                    const openMatch = result.matches.open;
-                    const closeMatch = result.matches.close;
-                    const jodiMatch = result.matches.jodi;
-
+                if (isDeclared && result.has_prediction && result.matches) {
+                    const matches = result.matches;
                     matchesHtml = `
-                        <div class="result-row">
-                            <span class="label">Match:</span>
-                            <span class="values">
-                                <span class="match-indicator ${openMatch ? 'match-yes' : 'match-no'}">
-                                    Open ${openMatch ? '✓' : '✗'}
-                                </span>
-                                <span class="match-indicator ${closeMatch ? 'match-yes' : 'match-no'}">
-                                    Close ${closeMatch ? '✓' : '✗'}
-                                </span>
-                                <span class="match-indicator ${jodiMatch ? 'match-yes' : 'match-no'}">
-                                    Jodi ${jodiMatch ? '✓' : '✗'}
-                                </span>
-                            </span>
-                        </div>
-                    `;
-                } else if (result.status === 'declared' && !result.has_prediction) {
-                    matchesHtml = `
-                        <div class="result-row">
-                            <span class="label">Match:</span>
-                            <span class="values" style="color: #7f8c8d; font-style: italic;">No prediction to compare</span>
+                        <div class="match-indicators">
+                            <div class="match-badge ${matches.open ? 'match-success' : 'match-fail'}">
+                                <i class="fas ${matches.open ? 'fa-check' : 'fa-times'}"></i> Open
+                            </div>
+                            <div class="match-badge ${matches.close ? 'match-success' : 'match-fail'}">
+                                <i class="fas ${matches.close ? 'fa-check' : 'fa-times'}"></i> Close
+                            </div>
+                            <div class="match-badge ${matches.jodi ? 'match-success' : 'match-fail'}">
+                                <i class="fas ${matches.jodi ? 'fa-check' : 'fa-times'}"></i> Jodi
+                            </div>
                         </div>
                     `;
                 }
 
                 html += `
                     <div class="${cardClass}">
-                        <div class="market-name">
-                            ${result.market} 
-                            <span style="font-size: 0.8rem; color: ${result.status === 'declared' ? '#27ae60' : '#f39c12'};">
-                                ${statusIcon} ${statusText}
-                            </span>
+                        <div class="result-header">
+                            <div class="market-name">${result.market}</div>
+                            <div class="${statusClass}">
+                                <i class="${statusIcon}"></i> ${statusText}
+                            </div>
                         </div>
-                        <div class="result-row">
-                            <span class="label">Open:</span>
-                            <span class="values">${result.open}</span>
-                        </div>
-                        <div class="result-row">
-                            <span class="label">Close:</span>
-                            <span class="values">${result.close}</span>
-                        </div>
-                        <div class="result-row">
-                            <span class="label">Jodi:</span>
-                            <span class="values">${result.jodi}</span>
+                        <div class="result-grid">
+                            <div class="result-item">
+                                <div class="result-item-label">Open</div>
+                                <div class="result-item-value">${result.open}</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-item-label">Close</div>
+                                <div class="result-item-value">${result.close}</div>
+                            </div>
+                            <div class="result-item">
+                                <div class="result-item-label">Jodi</div>
+                                <div class="result-item-value">${result.jodi}</div>
+                            </div>
                         </div>
                         ${matchesHtml}
-                        <div class="result-row">
-                            <span class="label">Time:</span>
-                            <span class="values">${result.time}</span>
-                        </div>
+                        ${!isDeclared ? `<p style="text-align: center; opacity: 0.7; font-size: 0.9rem;">Result expected at ${result.time}</p>` : ''}
                     </div>
                 `;
             });
 
-            html += `<div class="update-time">Today's Results • Last updated: ${new Date().toLocaleTimeString()}</div>`;
+            html += `<div class="update-time">Live results • Updated: ${new Date().toLocaleTimeString()}</div>`;
             content.innerHTML = html;
         }
 
@@ -530,7 +672,7 @@
             if (!predictionsData || !resultsData) return;
 
             let totalMatches = 0;
-            let totalPredictions = 0;
+            let totalDeclared = 0;
             let totalConfidence = 0;
             let confidenceCount = 0;
 
@@ -539,34 +681,24 @@
                     totalConfidence += pred.confidence;
                     confidenceCount++;
 
-                    const result = resultsData.results.find(r => r.market === pred.market);
+                    const result = resultsData.results.find(r => r.market === pred.market && r.status === 'declared');
                     if (result) {
-                        totalPredictions++;
-                        if (pred.open.includes(result.open) || 
-                            pred.close.includes(result.close) || 
-                            pred.jodis.includes(result.jodi)) {
+                        totalDeclared++;
+                        if ((result.matches && result.matches.open) || 
+                            (result.matches && result.matches.close) || 
+                            (result.matches && result.matches.jodi)) {
                             totalMatches++;
                         }
                     }
                 }
             });
 
-            const accuracy = totalPredictions > 0 ? Math.round((totalMatches / totalPredictions) * 100) : 0;
+            const accuracy = totalDeclared > 0 ? Math.round((totalMatches / totalDeclared) * 100) : 0;
             const avgConfidence = confidenceCount > 0 ? Math.round(totalConfidence / confidenceCount) : 0;
 
             document.getElementById('accuracyStat').textContent = accuracy + '%';
-            document.getElementById('matchesStat').textContent = totalMatches + '/' + totalPredictions;
+            document.getElementById('matchesStat').textContent = totalMatches + '/' + totalDeclared;
             document.getElementById('confidenceStat').textContent = avgConfidence + '%';
-        }
-
-        async function refreshPredictions() {
-            await generateNewPredictions();
-            updateStatistics();
-        }
-
-        async function refreshResults() {
-            await loadResults();
-            updateStatistics();
         }
     </script>
 </body>
