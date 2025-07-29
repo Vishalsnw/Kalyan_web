@@ -14,7 +14,7 @@ load_dotenv()
 warnings.filterwarnings("ignore")
 
 def convert_to_single_digit(value):
-    """Convert a number to single digit by summing its digits"""
+    """Convert a number to single digit by taking last digit of sum"""
     if pd.isna(value) or value == '' or value == '--':
         return '--'
     
@@ -27,11 +27,8 @@ def convert_to_single_digit(value):
         # Sum all digits
         digit_sum = sum(int(digit) for digit in str_val if digit.isdigit())
         
-        # Keep reducing until single digit
-        while digit_sum >= 10:
-            digit_sum = sum(int(digit) for digit in str(digit_sum))
-        
-        return str(digit_sum)
+        # Return last digit of the sum
+        return str(digit_sum)[-1]
     except:
         return '--'
 
