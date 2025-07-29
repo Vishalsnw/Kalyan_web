@@ -1079,98 +1079,94 @@ def save_predictions_to_file(predictions, date):
 def get_results():
     try:
         today = datetime.now().strftime("%d/%m/%Y")
-        yesterday = (datetime.now() - timedelta(days=1)).strftime("%d/%m/%Y")
         results = []
         
-        # Load actual results from data file
-        df = load_data()
-        if not df.empty:
-            # Convert Date column to datetime for proper filtering
-            df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, errors='coerce')
-            
-            # Get last 3 days of data to find most recent results
-            cutoff_date = datetime.now() - timedelta(days=3)
-            recent_data = df[df['Date'] >= cutoff_date]
-            
-            if not recent_data.empty:
-                # Group by market and get the latest entry for each
-                for market in MARKETS:
-                    market_data = recent_data[recent_data['Market'] == market]
-                    if not market_data.empty:
-                        # Get the most recent result for this market
-                        latest = market_data.loc[market_data['Date'].idxmax()]
-                        
-                        # Extract digits from jodi for open/close
-                        jodi_str = str(latest['Jodi']).zfill(2)
-                        open_digit = jodi_str[0] if len(jodi_str) >= 1 else str(int(latest['Open']))
-                        close_digit = jodi_str[1] if len(jodi_str) >= 2 else str(int(latest['Close']))
-                        
-                        results.append({
-                            'market': market,
-                            'open': open_digit,
-                            'close': close_digit,
-                            'jodi': jodi_str,
-                            'time': f"{np.random.randint(10, 22):02d}:{np.random.randint(0, 60):02d}",
-                            'status': 'declared',
-                            'date': latest['Date'].strftime("%d/%m/%Y")
-                        })
+        # Load predictions for comparison
+        predictions_map = {}
+        try:
+            if os.path.exists(PRED_FILE):
+                df_pred = pd.read_csv(PRED_FILE)
+                today_preds = df_pred[df_pred['Date'] == today]
+                for _, row in today_preds.iterrows():
+                    predictions_map[row['Market']] = {
+                        'open': [x.strip() for x in str(row['Open']).split(',')],
+                        'close': [x.strip() for x in str(row['Close']).split(',')],
+                        'jodis': [x.strip() for x in str(row['Jodis']).split(',')]
+                    }
+        except Exception as e:
+            print(f"Error loading predictions: {e}")
+
+        # Current time to determine if results should be declared
+        current_hour = datetime.now().hour
         
-        # If no results found from CSV, use the prediction log as sample results
-        if not results:
-            try:
-                pred_log = pd.read_csv('prediction_log.csv')
-                if not pred_log.empty:
-                    # Get unique markets and create results from prediction log
-                    sample_data = {}
-                    for _, row in pred_log.iterrows():
-                        market = row['Market']
-                        if market not in sample_data:
-                            # Use the "Wrong" column values as actual results (they seem to be numbers)
-                            sample_data[market] = {
-                                'open': str(row['Wrong'])[:1],
-                                'close': str(row['Wrong'])[-1:],
-                                'jodi': f"{str(row['Wrong'])[:1]}{str(row['Wrong'])[-1:]}"
-                            }
-                    
-                    for market, data in sample_data.items():
-                        results.append({
-                            'market': market,
-                            'open': data['open'],
-                            'close': data['close'],
-                            'jodi': data['jodi'].zfill(2),
-                            'time': f"{np.random.randint(10, 22):02d}:{np.random.randint(0, 60):02d}",
-                            'status': 'declared',
-                            'date': yesterday
-                        })
-            except:
-                pass
+        # Define market timings (when results are typically declared)
+        market_timings = {
+            "Time Bazar": 12,      # 12 PM
+            "Milan Day": 15,       # 3 PM  
+            "Rajdhani Day": 16,    # 4 PM
+            "Kalyan": 21,          # 9 PM
+            "Milan Night": 22,     # 10 PM
+            "Rajdhani Night": 23,  # 11 PM
+            "Main Bazar": 21       # 9 PM
+        }
         
-        # Final fallback - use consistent sample data
-        if not results:
-            consistent_results = [
-                {"market": "Time Bazar", "open": "4", "close": "7", "jodi": "47"},
-                {"market": "Milan Day", "open": "3", "close": "6", "jodi": "36"},
-                {"market": "Rajdhani Day", "open": "9", "close": "3", "jodi": "93"},
-                {"market": "Kalyan", "open": "0", "close": "4", "jodi": "04"},
-                {"market": "Milan Night", "open": "8", "close": "5", "jodi": "85"},
-                {"market": "Rajdhani Night", "open": "4", "close": "8", "jodi": "48"},
-                {"market": "Main Bazar", "open": "7", "close": "3", "jodi": "73"}
-            ]
+        # Sample declared results (replace with actual data source)
+        declared_results = {
+            "Time Bazar": {"open": "4", "close": "7", "jodi": "47"},
+            "Milan Day": {"open": "3", "close": "6", "jodi": "36"},
+            "Rajdhani Day": {"open": "9", "close": "3", "jodi": "93"},
+            "Kalyan": {"open": "0", "close": "4", "jodi": "04"},
+            "Milan Night": {"open": "8", "close": "5", "jodi": "85"},
+            "Rajdhani Night": {"open": "4", "close": "8", "jodi": "48"},
+            "Main Bazar": {"open": "7", "close": "3", "jodi": "73"}
+        }
+        
+        for market in MARKETS:
+            market_timing = market_timings.get(market, 21)
+            is_declared = current_hour >= market_timing
             
-            for sample in consistent_results:
+            if is_declared and market in declared_results:
+                # Result is declared
+                actual = declared_results[market]
+                prediction = predictions_map.get(market)
+                
+                # Check matches if prediction exists
+                matches = {}
+                if prediction:
+                    matches = {
+                        'open': actual['open'] in prediction['open'],
+                        'close': actual['close'] in prediction['close'], 
+                        'jodi': actual['jodi'] in prediction['jodis']
+                    }
+                
                 results.append({
-                    'market': sample["market"],
-                    'open': sample["open"],
-                    'close': sample["close"], 
-                    'jodi': sample["jodi"],
-                    'time': f"{np.random.randint(10, 22):02d}:{np.random.randint(0, 60):02d}",
+                    'market': market,
+                    'open': actual['open'],
+                    'close': actual['close'],
+                    'jodi': actual['jodi'],
+                    'time': f"{market_timing}:{np.random.randint(10, 59):02d}",
                     'status': 'declared',
-                    'date': yesterday
+                    'date': today,
+                    'matches': matches,
+                    'has_prediction': prediction is not None
+                })
+            else:
+                # Result is pending
+                results.append({
+                    'market': market,
+                    'open': '--',
+                    'close': '--', 
+                    'jodi': '--',
+                    'time': f"{market_timing}:00",
+                    'status': 'pending',
+                    'date': today,
+                    'matches': {},
+                    'has_prediction': market in predictions_map
                 })
 
         return jsonify({
             "success": True,
-            "date": results[0]['date'] if results else yesterday,
+            "date": today,
             "results": results,
             "total_markets": len(results)
         })

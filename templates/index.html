@@ -195,6 +195,11 @@
             background: #d5f4e6;
             border-left-color: #27ae60;
         }
+        
+        .result-pending {
+            background: #fff3cd;
+            border-left-color: #f39c12;
+        }
 
         .loading {
             text-align: center;
@@ -322,8 +327,8 @@
             loadDashboardData();
         });
 
-        // Auto-refresh every 30 seconds
-        setInterval(loadDashboardData, 30000);
+        // Auto-refresh every 60 seconds  
+        setInterval(loadDashboardData, 60000);
 
         async function loadDashboardData() {
             await Promise.all([
@@ -335,6 +340,7 @@
 
         async function loadPredictions() {
             try {
+                // First try cached predictions
                 const response = await fetch('/api/predictions-cached');
                 const data = await response.json();
 
@@ -342,14 +348,18 @@
                     predictionsData = data;
                     displayPredictions(data.predictions, data.date);
                 } else {
-                    // Generate new predictions if no cache
-                    await generateNewPredictions();
+                    // Show message to generate predictions
+                    document.getElementById('predictionsContent').innerHTML = `
+                        <div class="loading">
+                            <p>No predictions available. <button class="refresh-btn" onclick="generateNewPredictions()">Generate Now</button></p>
+                        </div>
+                    `;
                 }
             } catch (error) {
                 console.error('Error loading predictions:', error);
                 document.getElementById('predictionsContent').innerHTML = `
                     <div class="loading">
-                        <p>Error loading predictions. <button onclick="generateNewPredictions()">Retry</button></p>
+                        <p>Error loading predictions. <button class="refresh-btn" onclick="generateNewPredictions()">Retry</button></p>
                     </div>
                 `;
             }
@@ -441,39 +451,56 @@
 
             let html = '';
             results.forEach(result => {
-                const cardClass = result.status === 'declared' ? 'result-card result-declared' : 'result-card';
+                let cardClass = 'result-card';
+                let statusIcon = '⏳'; // Pending icon
+                let statusText = 'Pending';
+                
+                if (result.status === 'declared') {
+                    cardClass += ' result-declared';
+                    statusIcon = '✅';
+                    statusText = 'Declared';
+                }
 
-                // Check for matches with predictions
+                // Show match indicators only for declared results
                 let matchesHtml = '';
-                if (predictionsData && predictionsData.predictions) {
-                    const prediction = predictionsData.predictions.find(p => p.market === result.market);
-                    if (prediction && prediction.status === 'success') {
-                        const openMatch = prediction.open.includes(result.open);
-                        const closeMatch = prediction.close.includes(result.close);
-                        const jodiMatch = prediction.jodis.includes(result.jodi);
+                if (result.status === 'declared' && result.has_prediction && result.matches) {
+                    const openMatch = result.matches.open;
+                    const closeMatch = result.matches.close;
+                    const jodiMatch = result.matches.jodi;
 
-                        matchesHtml = `
-                            <div class="prediction-row">
-                                <span class="label">Match:</span>
-                                <span class="values">
-                                    <span class="match-indicator ${openMatch ? 'match-yes' : 'match-no'}">
-                                        Open ${openMatch ? '✓' : '✗'}
-                                    </span>
-                                    <span class="match-indicator ${closeMatch ? 'match-yes' : 'match-no'}">
-                                        Close ${closeMatch ? '✓' : '✗'}
-                                    </span>
-                                    <span class="match-indicator ${jodiMatch ? 'match-yes' : 'match-no'}">
-                                        Jodi ${jodiMatch ? '✓' : '✗'}
-                                    </span>
+                    matchesHtml = `
+                        <div class="result-row">
+                            <span class="label">Match:</span>
+                            <span class="values">
+                                <span class="match-indicator ${openMatch ? 'match-yes' : 'match-no'}">
+                                    Open ${openMatch ? '✓' : '✗'}
                                 </span>
-                            </div>
-                        `;
-                    }
+                                <span class="match-indicator ${closeMatch ? 'match-yes' : 'match-no'}">
+                                    Close ${closeMatch ? '✓' : '✗'}
+                                </span>
+                                <span class="match-indicator ${jodiMatch ? 'match-yes' : 'match-no'}">
+                                    Jodi ${jodiMatch ? '✓' : '✗'}
+                                </span>
+                            </span>
+                        </div>
+                    `;
+                } else if (result.status === 'declared' && !result.has_prediction) {
+                    matchesHtml = `
+                        <div class="result-row">
+                            <span class="label">Match:</span>
+                            <span class="values" style="color: #7f8c8d; font-style: italic;">No prediction to compare</span>
+                        </div>
+                    `;
                 }
 
                 html += `
                     <div class="${cardClass}">
-                        <div class="market-name">${result.market}</div>
+                        <div class="market-name">
+                            ${result.market} 
+                            <span style="font-size: 0.8rem; color: ${result.status === 'declared' ? '#27ae60' : '#f39c12'};">
+                                ${statusIcon} ${statusText}
+                            </span>
+                        </div>
                         <div class="result-row">
                             <span class="label">Open:</span>
                             <span class="values">${result.open}</span>
@@ -489,13 +516,13 @@
                         ${matchesHtml}
                         <div class="result-row">
                             <span class="label">Time:</span>
-                            <span class="values">${result.time || '--:--'}</span>
+                            <span class="values">${result.time}</span>
                         </div>
                     </div>
                 `;
             });
 
-            html += `<div class="update-time">Last updated: ${new Date().toLocaleTimeString()}</div>`;
+            html += `<div class="update-time">Today's Results • Last updated: ${new Date().toLocaleTimeString()}</div>`;
             content.innerHTML = html;
         }
 
