@@ -13,6 +13,28 @@ import sqlite3
 load_dotenv()
 warnings.filterwarnings("ignore")
 
+def convert_to_single_digit(value):
+    """Convert a number to single digit by summing its digits"""
+    if pd.isna(value) or value == '' or value == '--':
+        return '--'
+    
+    try:
+        # Convert to string and remove any non-digit characters
+        str_val = str(value).strip()
+        if str_val == '--' or str_val == '':
+            return '--'
+        
+        # Sum all digits
+        digit_sum = sum(int(digit) for digit in str_val if digit.isdigit())
+        
+        # Keep reducing until single digit
+        while digit_sum >= 10:
+            digit_sum = sum(int(digit) for digit in str(digit_sum))
+        
+        return str(digit_sum)
+    except:
+        return '--'
+
 # === ENHANCED CONFIG ===
 MARKETS = ["Time Bazar", "Milan Day", "Rajdhani Day", "Kalyan", "Milan Night", "Rajdhani Night", "Main Bazar"]
 DATA_FILE = "satta_data.csv"
@@ -74,11 +96,15 @@ def get_predictions():
         predictions = []
         for _, row in today_preds.iterrows():
             try:
+                # Convert open and close to single digits
+                open_values = [convert_to_single_digit(x.strip()) for x in str(row['Open']).split(',')]
+                close_values = [convert_to_single_digit(x.strip()) for x in str(row['Close']).split(',')]
+                
                 predictions.append({
                     "market": row['Market'],
                     "status": "success",
-                    "open": [x.strip() for x in str(row['Open']).split(',')],
-                    "close": [x.strip() for x in str(row['Close']).split(',')],
+                    "open": open_values,
+                    "close": close_values,
                     "pattis": [x.strip() for x in str(row['Pattis']).split(',')],
                     "jodis": [x.strip() for x in str(row['Jodis']).split(',')],
                     "confidence": row.get('Confidence', 85.0) if pd.notna(row.get('Confidence')) else 85.0
@@ -118,8 +144,8 @@ def get_results():
 
                 for _, row in today_results.iterrows():
                     declared_results[row['Market']] = {
-                        'open': str(row['Open']),
-                        'close': str(row['Close']),
+                        'open': convert_to_single_digit(row['Open']),
+                        'close': convert_to_single_digit(row['Close']),
                         'jodi': str(row['Jodi']).zfill(2)
                     }
             except Exception as e:
@@ -133,8 +159,8 @@ def get_results():
                 today_preds = df_pred[df_pred['Date'] == today]
                 for _, row in today_preds.iterrows():
                     predictions_map[row['Market']] = {
-                        'open': [x.strip() for x in str(row['Open']).split(',')],
-                        'close': [x.strip() for x in str(row['Close']).split(',')],
+                        'open': [convert_to_single_digit(x.strip()) for x in str(row['Open']).split(',')],
+                        'close': [convert_to_single_digit(x.strip()) for x in str(row['Close']).split(',')],
                         'jodis': [x.strip() for x in str(row['Jodis']).split(',')]
                     }
         except Exception as e:
