@@ -668,11 +668,29 @@
             content.innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
-                    <p>Generating AI predictions...</p>
+                    <p>Loading predictions...</p>
                 </div>
             `;
 
             try {
+                // First try to get cached predictions
+                const cacheResponse = await fetch('/api/predictions-cached');
+                if (cacheResponse.ok) {
+                    const cacheData = await cacheResponse.json();
+                    if (cacheData.success && cacheData.predictions.length > 0) {
+                        displayPredictions(cacheData.predictions, cacheData.date);
+                        return;
+                    }
+                }
+
+                // If no cache, generate new predictions
+                content.innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Generating new AI predictions...</p>
+                    </div>
+                `;
+
                 const response = await fetch('/api/predictions');
                 const data = await response.json();
 
@@ -1360,9 +1378,35 @@ function displayAnalytics(performance, heatmap, accuracy, risk) {
 
         // Auto-load predictions and results on page load
         document.addEventListener('DOMContentLoaded', function() {
-            generatePredictions();
+            // Load cached predictions immediately
+            loadCachedPredictions();
             loadResults();
         });
+
+        // Load cached predictions immediately
+        async function loadCachedPredictions() {
+            try {
+                const response = await fetch('/api/predictions-cached');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayPredictions(data.predictions, data.date);
+                } else {
+                    // If no cache, show default message
+                    document.getElementById('predictionsContent').innerHTML = `
+                        <div class="loading">
+                            <p>Click "Generate Predictions" to load AI analysis...</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('predictionsContent').innerHTML = `
+                    <div class="loading">
+                        <p>Click "Generate Predictions" to load AI analysis...</p>
+                    </div>
+                `;
+            }
+        }
 
         // Auto-refresh results every 2 minutes when results tab is active
         setInterval(() => {

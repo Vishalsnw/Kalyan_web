@@ -810,6 +810,59 @@ def broadcast_update(data):
 def index():
     return render_template('index.html')
 
+@app.route('/api/predictions-cached')
+@handle_json_errors
+def get_cached_predictions():
+    """Get predictions from CSV file without running ML models"""
+    try:
+        if not os.path.exists(PRED_FILE):
+            return jsonify({
+                "success": False,
+                "error": "No cached predictions found"
+            })
+
+        # Read predictions from CSV
+        df_pred = pd.read_csv(PRED_FILE)
+        prediction_date = next_prediction_date()
+        
+        # Filter for today's predictions
+        today_preds = df_pred[df_pred['Date'] == prediction_date]
+        
+        if today_preds.empty:
+            return jsonify({
+                "success": False,
+                "error": "No predictions for today"
+            })
+
+        predictions = []
+        for _, row in today_preds.iterrows():
+            try:
+                predictions.append({
+                    "market": row['Market'],
+                    "status": "success",
+                    "open": row['Open'].split(', ') if pd.notna(row['Open']) else [],
+                    "close": row['Close'].split(', ') if pd.notna(row['Close']) else [],
+                    "pattis": row['Pattis'].split(', ') if pd.notna(row['Pattis']) else [],
+                    "jodis": row['Jodis'].split(', ') if pd.notna(row['Jodis']) else [],
+                    "confidence": row.get('Confidence', 75.0)
+                })
+            except Exception as e:
+                print(f"Error processing cached prediction for {row['Market']}: {e}")
+                continue
+
+        return jsonify({
+            "success": True,
+            "date": prediction_date,
+            "predictions": predictions,
+            "cached": True
+        })
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        })
+
 @app.route('/api/predictions')
 @handle_json_errors
 def get_predictions():
