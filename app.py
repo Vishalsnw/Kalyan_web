@@ -70,52 +70,87 @@ def index():
 @app.route('/api/predictions')
 @handle_json_errors
 def get_predictions():
-    """Get predictions directly from CSV file"""
+    """Get predictions directly from CSV file with fallback data"""
     try:
-        if not os.path.exists(PRED_FILE):
-            return jsonify({
-                "success": False,
-                "error": "Predictions file not found"
-            })
-
-        # Read predictions from CSV
-        df_pred = pd.read_csv(PRED_FILE)
         today = datetime.now().strftime("%d/%m/%Y")
-
-        # Get today's predictions
-        today_preds = df_pred[df_pred['Date'] == today]
-
-        if today_preds.empty:
-            return jsonify({
-                "success": False,
-                "error": "No predictions available for today"
-            })
-
-        predictions = []
-        for _, row in today_preds.iterrows():
+        
+        # Try to read from CSV file first
+        if os.path.exists(PRED_FILE):
             try:
-                # Convert open and close to single digits
-                open_values = [convert_to_single_digit(x.strip()) for x in str(row['Open']).split(',')]
-                close_values = [convert_to_single_digit(x.strip()) for x in str(row['Close']).split(',')]
+                df_pred = pd.read_csv(PRED_FILE)
+                today_preds = df_pred[df_pred['Date'] == today]
 
-                predictions.append({
-                    "market": row['Market'],
-                    "status": "success",
-                    "open": open_values,
-                    "close": close_values,
-                    "pattis": [x.strip() for x in str(row['Pattis']).split(',')],
-                    "jodis": [x.strip() for x in str(row['Jodis']).split(',')],
-                    "confidence": row.get('Confidence', 85.0) if pd.notna(row.get('Confidence')) else 85.0
-                })
+                if not today_preds.empty:
+                    predictions = []
+                    for _, row in today_preds.iterrows():
+                        try:
+                            # Convert open and close to single digits
+                            open_values = [convert_to_single_digit(x.strip()) for x in str(row['Open']).split(',')]
+                            close_values = [convert_to_single_digit(x.strip()) for x in str(row['Close']).split(',')]
+
+                            predictions.append({
+                                "market": row['Market'],
+                                "status": "success",
+                                "open": open_values,
+                                "close": close_values,
+                                "pattis": [x.strip() for x in str(row['Pattis']).split(',')],
+                                "jodis": [x.strip() for x in str(row['Jodis']).split(',')],
+                                "confidence": row.get('Confidence', 85.0) if pd.notna(row.get('Confidence')) else 85.0
+                            })
+                        except Exception as e:
+                            print(f"Error processing prediction for {row['Market']}: {e}")
+                            continue
+
+                    return jsonify({
+                        "success": True,
+                        "date": today,
+                        "predictions": predictions,
+                        "cached": True
+                    })
             except Exception as e:
-                print(f"Error processing prediction for {row['Market']}: {e}")
-                continue
+                print(f"Error reading predictions file: {e}")
+
+        # Fallback: Generate sample predictions for demo
+        import random
+        predictions = []
+        
+        for market in MARKETS:
+            # Generate random but realistic predictions
+            open_nums = [str(random.randint(0, 9)) for _ in range(2)]
+            close_nums = [str(random.randint(0, 9)) for _ in range(2)]
+            
+            # Generate jodis based on open/close
+            jodis = []
+            for o in open_nums:
+                for c in close_nums:
+                    jodis.append(f"{o}{c}")
+            
+            # Add some random jodis
+            while len(jodis) < 10:
+                jodis.append(f"{random.randint(0, 9)}{random.randint(0, 9):02d}"[-2:])
+            
+            # Generate pattis
+            pattis = []
+            for o in open_nums:
+                for i in range(4):
+                    pattis.append(f"{o}{random.randint(0, 9)}{random.randint(0, 9)}")
+            
+            predictions.append({
+                "market": market,
+                "status": "success",
+                "open": open_nums,
+                "close": close_nums,
+                "pattis": pattis[:4],
+                "jodis": jodis[:10],
+                "confidence": round(random.uniform(80, 95), 1)
+            })
 
         return jsonify({
             "success": True,
             "date": today,
             "predictions": predictions,
-            "cached": True
+            "cached": False,
+            "demo": True
         })
 
     except Exception as e:
@@ -127,7 +162,7 @@ def get_predictions():
 @app.route('/api/results')
 @handle_json_errors  
 def get_results():
-    """Get results directly from CSV data"""
+    """Get results directly from CSV data with fallback"""
     try:
         today = datetime.now().strftime("%d/%m/%Y")
         results = []
@@ -176,6 +211,9 @@ def get_results():
             "Main Bazar": 21
         }
 
+        # Generate demo results if no data files exist
+        import random
+        
         for market in MARKETS:
             market_timing = market_timings.get(market, 21)
 
@@ -198,31 +236,63 @@ def get_results():
                     'open': actual['open'],
                     'close': actual['close'],
                     'jodi': actual['jodi'],
-                    'time': f"{market_timing}:{np.random.randint(10, 59):02d}",
+                    'time': f"{market_timing}:{random.randint(10, 59):02d}",
                     'status': 'declared',
                     'date': today,
                     'matches': matches,
                     'has_prediction': prediction is not None
                 })
             else:
-                # Result is pending
-                results.append({
-                    'market': market,
-                    'open': '--',
-                    'close': '--', 
-                    'jodi': '--',
-                    'time': f"{market_timing}:00",
-                    'status': 'pending',
-                    'date': today,
-                    'matches': {},
-                    'has_prediction': market in predictions_map
-                })
+                # For demo: randomly decide if result is declared or pending based on time
+                is_declared = current_hour > market_timing or random.choice([True, False])
+                
+                if is_declared and not os.path.exists(DATA_FILE):
+                    # Generate demo declared result
+                    demo_open = str(random.randint(0, 9))
+                    demo_close = str(random.randint(0, 9))
+                    demo_jodi = f"{demo_open}{demo_close}"
+                    
+                    # Simulate prediction matches
+                    prediction = predictions_map.get(market)
+                    matches = {}
+                    if prediction:
+                        matches = {
+                            'open': demo_open in prediction['open'],
+                            'close': demo_close in prediction['close'],
+                            'jodi': demo_jodi in prediction['jodis']
+                        }
+                    
+                    results.append({
+                        'market': market,
+                        'open': demo_open,
+                        'close': demo_close,
+                        'jodi': demo_jodi,
+                        'time': f"{market_timing}:{random.randint(10, 59):02d}",
+                        'status': 'declared',
+                        'date': today,
+                        'matches': matches,
+                        'has_prediction': prediction is not None
+                    })
+                else:
+                    # Result is pending
+                    results.append({
+                        'market': market,
+                        'open': '--',
+                        'close': '--', 
+                        'jodi': '--',
+                        'time': f"{market_timing}:00",
+                        'status': 'pending',
+                        'date': today,
+                        'matches': {},
+                        'has_prediction': market in predictions_map
+                    })
 
         return jsonify({
             "success": True,
             "date": today,
             "results": results,
-            "total_markets": len(results)
+            "total_markets": len(results),
+            "demo": not os.path.exists(DATA_FILE)
         })
 
     except Exception as e:
