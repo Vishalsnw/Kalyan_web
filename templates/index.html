@@ -474,7 +474,7 @@
         <div class="section active" id="predictions">
             <div class="controls">
                 <button class="btn btn-primary" onclick="generatePredictions()">
-                    <i class="fas fa-magic"></i> Generate Predictions
+                    <i class="fas fa-sync-alt"></i> Refresh Predictions
                 </button>
                 <button class="btn btn-secondary" onclick="exportData('predictions')">
                     <i class="fas fa-download"></i> Export CSV
@@ -662,40 +662,28 @@
             event.target.classList.add('active');
         }
 
-        // Generate Predictions
+        // Generate Fresh Predictions (force refresh)
         async function generatePredictions() {
             const content = document.getElementById('predictionsContent');
             content.innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
-                    <p>Loading predictions...</p>
+                    <p>Generating fresh AI predictions...</p>
                 </div>
             `;
 
             try {
-                // First try to get cached predictions
-                const cacheResponse = await fetch('/api/predictions-cached');
-                if (cacheResponse.ok) {
-                    const cacheData = await cacheResponse.json();
-                    if (cacheData.success && cacheData.predictions.length > 0) {
-                        displayPredictions(cacheData.predictions, cacheData.date);
-                        return;
-                    }
-                }
-
-                // If no cache, generate new predictions
-                content.innerHTML = `
-                    <div class="loading">
-                        <div class="spinner"></div>
-                        <p>Generating new AI predictions...</p>
-                    </div>
-                `;
-
                 const response = await fetch('/api/predictions');
                 const data = await response.json();
 
                 if (data.success) {
                     displayPredictions(data.predictions, data.date);
+                    // Show success message
+                    const successMsg = document.createElement('div');
+                    successMsg.className = 'success';
+                    successMsg.innerHTML = '<i class="fas fa-check"></i> Fresh predictions generated!';
+                    content.insertBefore(successMsg, content.firstChild);
+                    setTimeout(() => successMsg.remove(), 3000);
                 } else {
                     content.innerHTML = `<div class="error">Error: ${data.error}</div>`;
                 }
@@ -1378,33 +1366,58 @@ function displayAnalytics(performance, heatmap, accuracy, risk) {
 
         // Auto-load predictions and results on page load
         document.addEventListener('DOMContentLoaded', function() {
-            // Load cached predictions immediately
-            loadCachedPredictions();
+            // Auto-load predictions immediately
+            autoLoadPredictions();
             loadResults();
         });
 
-        // Load cached predictions immediately
-        async function loadCachedPredictions() {
+        // Auto-load predictions immediately - just like sports scores
+        async function autoLoadPredictions() {
+            const content = document.getElementById('predictionsContent');
+            content.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading predictions...</p>
+                </div>
+            `;
+
             try {
                 const response = await fetch('/api/predictions-cached');
                 const data = await response.json();
                 
+                if (data.success && data.predictions.length > 0) {
+                    displayPredictions(data.predictions, data.date);
+                } else {
+                    // If no cache, auto-generate new predictions
+                    await generatePredictionsAutomatically();
+                }
+            } catch (error) {
+                console.error('Auto-load error:', error);
+                await generatePredictionsAutomatically();
+            }
+        }
+
+        // Generate predictions automatically without user interaction
+        async function generatePredictionsAutomatically() {
+            const content = document.getElementById('predictionsContent');
+            content.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Generating fresh predictions...</p>
+                </div>
+            `;
+
+            try {
+                const response = await fetch('/api/predictions');
+                const data = await response.json();
+
                 if (data.success) {
                     displayPredictions(data.predictions, data.date);
                 } else {
-                    // If no cache, show default message
-                    document.getElementById('predictionsContent').innerHTML = `
-                        <div class="loading">
-                            <p>Click "Generate Predictions" to load AI analysis...</p>
-                        </div>
-                    `;
+                    content.innerHTML = `<div class="error">Error loading predictions: ${data.error}</div>`;
                 }
             } catch (error) {
-                document.getElementById('predictionsContent').innerHTML = `
-                    <div class="loading">
-                        <p>Click "Generate Predictions" to load AI analysis...</p>
-                    </div>
-                `;
+                content.innerHTML = `<div class="error">Network error: ${error.message}</div>`;
             }
         }
 

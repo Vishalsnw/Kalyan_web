@@ -815,52 +815,54 @@ def index():
 def get_cached_predictions():
     """Get predictions from CSV file without running ML models"""
     try:
-        if not os.path.exists(PRED_FILE):
-            return jsonify({
-                "success": False,
-                "error": "No cached predictions found"
-            })
-
-        # Read predictions from CSV
-        df_pred = pd.read_csv(PRED_FILE)
         prediction_date = next_prediction_date()
-        
-        # Filter for today's predictions
-        today_preds = df_pred[df_pred['Date'] == prediction_date]
-        
-        if today_preds.empty:
+        predictions = []
+
+        # Try to read from cache first
+        if os.path.exists(PRED_FILE):
+            try:
+                df_pred = pd.read_csv(PRED_FILE)
+                today_preds = df_pred[df_pred['Date'] == prediction_date]
+                
+                for _, row in today_preds.iterrows():
+                    try:
+                        predictions.append({
+                            "market": row['Market'],
+                            "status": "success",
+                            "open": row['Open'].split(', ') if pd.notna(row['Open']) else [],
+                            "close": row['Close'].split(', ') if pd.notna(row['Close']) else [],
+                            "pattis": row['Pattis'].split(', ') if pd.notna(row['Pattis']) else [],
+                            "jodis": row['Jodis'].split(', ') if pd.notna(row['Jodis']) else [],
+                            "confidence": row.get('Confidence', 75.0)
+                        })
+                    except Exception as e:
+                        print(f"Error processing cached prediction for {row['Market']}: {e}")
+                        continue
+            except Exception as e:
+                print(f"Error reading cache file: {e}")
+
+        # If we have valid predictions, return them
+        if predictions and len(predictions) > 0:
             return jsonify({
-                "success": False,
-                "error": "No predictions for today"
+                "success": True,
+                "date": prediction_date,
+                "predictions": predictions,
+                "cached": True
             })
 
-        predictions = []
-        for _, row in today_preds.iterrows():
-            try:
-                predictions.append({
-                    "market": row['Market'],
-                    "status": "success",
-                    "open": row['Open'].split(', ') if pd.notna(row['Open']) else [],
-                    "close": row['Close'].split(', ') if pd.notna(row['Close']) else [],
-                    "pattis": row['Pattis'].split(', ') if pd.notna(row['Pattis']) else [],
-                    "jodis": row['Jodis'].split(', ') if pd.notna(row['Jodis']) else [],
-                    "confidence": row.get('Confidence', 75.0)
-                })
-            except Exception as e:
-                print(f"Error processing cached prediction for {row['Market']}: {e}")
-                continue
-
+        # If no cache or empty cache, return empty with success=False so frontend knows to generate
         return jsonify({
-            "success": True,
+            "success": False,
+            "error": "No cached predictions available",
             "date": prediction_date,
-            "predictions": predictions,
-            "cached": True
+            "predictions": []
         })
 
     except Exception as e:
         return jsonify({
             "success": False,
-            "error": str(e)
+            "error": str(e),
+            "predictions": []
         })
 
 @app.route('/api/predictions')
