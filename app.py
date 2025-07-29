@@ -3,12 +3,13 @@ import json
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, send_from_directory, Response
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 import warnings
 from dotenv import load_dotenv
 import sqlite3
+import xml.etree.ElementTree as ET
 
 load_dotenv()
 warnings.filterwarnings("ignore")
@@ -17,16 +18,16 @@ def convert_to_single_digit(value):
     """Convert a number to single digit by taking last digit of sum"""
     if pd.isna(value) or value == '' or value == '--':
         return '--'
-    
+
     try:
         # Convert to string and remove any non-digit characters
         str_val = str(value).strip()
         if str_val == '--' or str_val == '':
             return '--'
-        
+
         # Sum all digits
         digit_sum = sum(int(digit) for digit in str_val if digit.isdigit())
-        
+
         # Return last digit of the sum
         return str(digit_sum)[-1]
     except:
@@ -96,7 +97,7 @@ def get_predictions():
                 # Convert open and close to single digits
                 open_values = [convert_to_single_digit(x.strip()) for x in str(row['Open']).split(',')]
                 close_values = [convert_to_single_digit(x.strip()) for x in str(row['Close']).split(',')]
-                
+
                 predictions.append({
                     "market": row['Market'],
                     "status": "success",
@@ -231,6 +232,60 @@ def get_results():
             "results": [],
             "total_markets": 0
         })
+
+@app.route('/sitemap.xml')
+def sitemap():
+    """Generate dynamic sitemap"""
+    try:
+        with open('sitemap.xml', 'r') as f:
+            return Response(f.read(), mimetype='application/xml')
+    except:
+        # Fallback dynamic sitemap
+        xml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>https://kalyanx.replit.app/</loc>
+        <lastmod>{}</lastmod>
+        <changefreq>hourly</changefreq>
+        <priority>1.0</priority>
+    </url>
+</urlset>'''.format(datetime.now().strftime('%Y-%m-%dT%H:%M:%S+00:00'))
+        return Response(xml_content, mimetype='application/xml')
+
+@app.route('/robots.txt')
+def robots():
+    """Serve robots.txt"""
+    try:
+        with open('robots.txt', 'r') as f:
+            return Response(f.read(), mimetype='text/plain')
+    except:
+        return Response('User-agent: *\nAllow: /\nSitemap: https://kalyanx.replit.app/sitemap.xml', mimetype='text/plain')
+
+@app.route('/manifest.json')
+def manifest():
+    """PWA manifest for mobile optimization"""
+    manifest_data = {
+        "name": "KalyanX - Satta Matka Analytics",
+        "short_name": "KalyanX",
+        "description": "Live Satta Matka results and AI predictions",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#1a1d29",
+        "theme_color": "#64b5f6",
+        "icons": [
+            {
+                "src": "/favicon-192.png",
+                "sizes": "192x192",
+                "type": "image/png"
+            },
+            {
+                "src": "/favicon-512.png", 
+                "sizes": "512x512",
+                "type": "image/png"
+            }
+        ]
+    }
+    return jsonify(manifest_data)
 
 if __name__ == "__main__":
     try:
