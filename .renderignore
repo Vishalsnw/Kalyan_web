@@ -1,0 +1,9 @@
+*.csv
+*.json
+*.db
+*.txt
+*.log
+*.xml
+node_modules/
+__pycache__/
+*.md
