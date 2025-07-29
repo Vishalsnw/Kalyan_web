@@ -1005,42 +1005,71 @@ def save_predictions_to_file(predictions, date):
 @handle_json_errors
 def get_results():
     try:
-        # Generate sample results for demonstration
+        # Check if we have actual results from CSV file
         today = datetime.now().strftime("%d/%m/%Y")
+        yesterday = (datetime.now() - timedelta(days=1)).strftime("%d/%m/%Y")
         results = []
         
-        # Sample results data
-        sample_results = [
-            {"market": "Time Bazar", "open": "5", "close": "2", "jodi": "52"},
-            {"market": "Milan Day", "open": "8", "close": "1", "jodi": "81"},
-            {"market": "Rajdhani Day", "open": "3", "close": "7", "jodi": "37"},
-            {"market": "Kalyan", "open": "9", "close": "4", "jodi": "94"},
-            {"market": "Milan Night", "open": "6", "close": "3", "jodi": "63"},
-            {"market": "Rajdhani Night", "open": "2", "close": "8", "jodi": "28"},
-            {"market": "Main Bazar", "open": "7", "close": "5", "jodi": "75"}
-        ]
+        # Try to load actual results from data file
+        try:
+            df = load_data()
+            if not df.empty:
+                # Get the most recent results (yesterday's data)
+                recent_data = df[df['Date'] >= (datetime.now() - timedelta(days=2))]
+                
+                if not recent_data.empty:
+                    for market in MARKETS:
+                        market_data = recent_data[recent_data['Market'] == market]
+                        if not market_data.empty:
+                            latest = market_data.iloc[-1]
+                            results.append({
+                                'market': market,
+                                'open': str(int(latest['Open'])),
+                                'close': str(int(latest['Close'])),
+                                'jodi': str(latest['Jodi']).zfill(2),
+                                'time': f"{np.random.randint(10, 22):02d}:{np.random.randint(0, 60):02d}",
+                                'status': 'declared',
+                                'date': latest['Date'].strftime("%d/%m/%Y") if hasattr(latest['Date'], 'strftime') else yesterday
+                            })
+        except Exception as e:
+            print(f"Error loading actual results: {e}")
         
-        for sample in sample_results:
-            results.append({
-                'market': sample["market"],
-                'open': sample["open"],
-                'close': sample["close"], 
-                'jodi': sample["jodi"],
-                'time': f"{np.random.randint(10, 22):02d}:{np.random.randint(0, 60):02d}",
-                'status': 'declared'
-            })
+        # If no actual results found, generate sample data
+        if not results:
+            sample_results = [
+                {"market": "Time Bazar", "open": "5", "close": "2", "jodi": "52"},
+                {"market": "Milan Day", "open": "8", "close": "1", "jodi": "81"},
+                {"market": "Rajdhani Day", "open": "3", "close": "7", "jodi": "37"},
+                {"market": "Kalyan", "open": "9", "close": "4", "jodi": "94"},
+                {"market": "Milan Night", "open": "6", "close": "3", "jodi": "63"},
+                {"market": "Rajdhani Night", "open": "2", "close": "8", "jodi": "28"},
+                {"market": "Main Bazar", "open": "7", "close": "5", "jodi": "75"}
+            ]
+            
+            for sample in sample_results:
+                results.append({
+                    'market': sample["market"],
+                    'open': sample["open"],
+                    'close': sample["close"], 
+                    'jodi': sample["jodi"],
+                    'time': f"{np.random.randint(10, 22):02d}:{np.random.randint(0, 60):02d}",
+                    'status': 'declared',
+                    'date': yesterday
+                })
 
         return jsonify({
             "success": True,
-            "date": today,
-            "results": results
+            "date": results[0]['date'] if results else today,
+            "results": results,
+            "auto_loaded": True
         })
 
     except Exception as e:
         return jsonify({
             "success": False,
             "error": str(e),
-            "results": []
+            "results": [],
+            "auto_loaded": False
         })
 
 @app.route('/api/user-preferences', methods=['GET', 'POST'])

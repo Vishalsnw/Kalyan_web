@@ -619,7 +619,7 @@
             <div id="resultsContent">
                 <div class="loading">
                     <div class="spinner"></div>
-                    <p>Click "Load Latest Results" to view results...</p>
+                    <p>Loading latest results...</p>
                 </div>
             </div>
         </div>
@@ -1135,8 +1135,9 @@ async function loadAnalytics() {
 
         function displayResults(data) {
             const content = document.getElementById('resultsContent');
+            const autoLoadedText = data.auto_loaded ? ' (Auto-updated)' : '';
 
-            let html = `<h2>Latest Results - ${data.date}</h2><div class="prediction-grid">`;
+            let html = `<h2>Latest Results - ${data.date}${autoLoadedText}</h2><div class="prediction-grid">`;
 
             data.results.forEach(result => {
                 html += `
@@ -1146,15 +1147,15 @@ async function loadAnalytics() {
                         <div class="prediction-values">
                             <div class="prediction-row">
                                 <span>Open:</span>
-                                <span>${result.open}</span>
+                                <span><strong>${result.open}</strong></span>
                             </div>
                             <div class="prediction-row">
                                 <span>Close:</span>
-                                <span>${result.close}</span>
+                                <span><strong>${result.close}</strong></span>
                             </div>
                             <div class="prediction-row">
                                 <span>Jodi:</span>
-                                <span>${result.jodi}</span>
+                                <span><strong>${result.jodi}</strong></span>
                             </div>
                             <div class="prediction-row">
                                 <span>Time:</span>
@@ -1166,6 +1167,9 @@ async function loadAnalytics() {
             });
 
             html += '</div>';
+            html += `<p style="text-align: center; color: #666; margin-top: 20px; font-size: 14px;">
+                <i class="fas fa-sync"></i> Results auto-refresh every 2 minutes
+            </p>`;
             content.innerHTML = html;
         }
 
@@ -1349,12 +1353,23 @@ function displayAnalytics(performance, heatmap, accuracy, risk) {
             if (document.querySelector('#predictions.active')) {
                 generatePredictions();
             }
+            if (document.querySelector('#results.active')) {
+                loadResults();
+            }
         }, 300000);
 
-        // Auto-load predictions on page load
+        // Auto-load predictions and results on page load
         document.addEventListener('DOMContentLoaded', function() {
             generatePredictions();
+            loadResults();
         });
+
+        // Auto-refresh results every 2 minutes when results tab is active
+        setInterval(() => {
+            if (document.querySelector('#results.active')) {
+                loadResults();
+            }
+        }, 120000);
     </script>
 </body>
 </html>
