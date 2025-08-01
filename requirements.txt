@@ -1,14 +1,36 @@
-Flask==3.0.0
-Flask-SocketIO==5.3.6
-flask-cors==4.0.0
-gunicorn==21.2.0
-pandas==2.2.2
-numpy==1.26.2
-scikit-learn==1.3.2
-requests==2.31.0
-beautifulsoup4==4.12.2
-python-dotenv==1.0.0
-Werkzeug==3.0.1
-APScheduler==3.10.4
-schedule==1.2.0
-plotly==5.17.0
+# Use Python 3.11 (stable with all your dependencies)
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies (for pandas, numpy, etc.)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    libffi-dev \
+    libssl-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    libpq-dev \
+    python3-dev \
+    git \
+    && apt-get clean
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+
+# Copy app files
+COPY . .
+
+# Expose port for Render
+ENV PORT 10000
+
+# Start Flask app using Gunicorn with SocketIO support (eventlet)
+CMD ["gunicorn", "--worker-class", "eventlet", "-w", "1", "-b", "0.0.0.0:10000", "app:app"]
