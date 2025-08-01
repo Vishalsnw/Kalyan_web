@@ -1,17 +1,11 @@
 services:
   - type: web
-    name: your-backend-name           # Change this to your preferred service name
-    env: python
-    runtime: python
-    region: oregon                    # or frankfurt, singapore, etc. — pick closest to your users
-    branch: main                      # Or whichever branch you're deploying from
-    buildCommand: |
-      pip install --upgrade pip
-      pip install -r requirements.txt
-    startCommand: python app.py       # Replace with: uvicorn main:app --host=0.0.0.0 --port=10000 for FastAPI
+    name: flask-backend
+    env: docker
+    region: oregon
+    plan: free
+    dockerfilePath: ./Dockerfile
+    branch: main
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11
       - key: PORT
-        value: 10000                  # Required for Render
-    plan: free                        # Or use 'starter'/'standard' as per your billing plan
+        value: 10000
