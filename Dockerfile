@@ -1,4 +1,4 @@
-# Use Python 3.11 (fully compatible with current Pandas & Cython builds)
+# Use Python 3.11 (stable with all your dependencies)
 FROM python:3.11-slim
 
 # Set environment variables
@@ -8,15 +8,29 @@ ENV PYTHONUNBUFFERED 1
 # Set working directory
 WORKDIR /app
 
-# Install dependencies
-COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+# Install system dependencies (for pandas, numpy, etc.)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    libffi-dev \
+    libssl-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    libpq-dev \
+    python3-dev \
+    git \
+    && apt-get clean
 
-# Copy app code
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+
+# Copy app files
 COPY . .
 
-# Expose port (Render will inject PORT env var)
+# Expose port for Render
 ENV PORT 10000
 
-# Run the Flask app
-CMD ["python", "app.py"]
+# Start Flask app using Gunicorn with SocketIO support (eventlet)
+CMD ["gunicorn", "--worker-class", "eventlet", "-w", "1", "-b", "0.0.0.0:10000", "app:app"]
