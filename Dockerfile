@@ -1,19 +1,21 @@
-FROM python:3.11-slim
+# Use official Python image
+FROM python:3.10-slim
 
-# Set environment vars
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-
+# Set working directory
 WORKDIR /app
 
-# System dependencies for numpy/pandas
-RUN apt-get update && apt-get install -y build-essential gcc libffi-dev libssl-dev && apt-get clean
-
+# Copy requirements and install
 COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy all project files
 COPY . .
 
-ENV PORT=10000
+# Expose port for Flask
+EXPOSE 8080
 
-CMD ["gunicorn", "--worker-class", "eventlet", "-w", "1", "-b", "0.0.0.0:10000", "app:app"]
+# Set environment variable (Flask will use this port on Cloud Run)
+ENV PORT 8080
+
+# Run the Flask app using gunicorn
+CMD ["gunicorn", "-b", "0.0.0.0:8080", "app:app"]
