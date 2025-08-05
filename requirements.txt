@@ -6,3 +6,4 @@ pandas
 numpy
 gunicorn
 requests
+bs4
